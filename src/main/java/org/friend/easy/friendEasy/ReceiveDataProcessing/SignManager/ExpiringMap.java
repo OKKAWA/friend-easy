@@ -1,4 +1,6 @@
 package org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -89,11 +91,11 @@ public class ExpiringMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public synchronized Set<K> keySet() {
+    public synchronized @NotNull Set<K> keySet() {
         cleanup();
         return new AbstractSet<K>() {
             @Override
-            public Iterator<K> iterator() {
+            public @NotNull Iterator<K> iterator() {
                 return new KeyIterator();
             }
 
@@ -110,11 +112,11 @@ public class ExpiringMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public synchronized Collection<V> values() {
+    public synchronized @NotNull Collection<V> values() {
         cleanup();
         return new AbstractCollection<V>() {
             @Override
-            public Iterator<V> iterator() {
+            public @NotNull Iterator<V> iterator() {
                 return new ValueIterator();
             }
 
@@ -131,11 +133,11 @@ public class ExpiringMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public synchronized Set<Entry<K, V>> entrySet() {
+    public synchronized @NotNull Set<Entry<K, V>> entrySet() {
         cleanup();
         return new AbstractSet<Entry<K, V>>() {
             @Override
-            public Iterator<Entry<K, V>> iterator() {
+            public @NotNull Iterator<Entry<K, V>> iterator() {
                 return new EntryIterator();
             }
 
@@ -249,7 +251,7 @@ public class ExpiringMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public synchronized V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+    public synchronized V computeIfAbsent(K key, @NotNull Function<? super K, ? extends V> mappingFunction) {
         V v = get(key);
         if (v == null) {
             V newValue = mappingFunction.apply(key);
@@ -262,7 +264,7 @@ public class ExpiringMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public synchronized V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public synchronized V computeIfPresent(K key, @NotNull BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         V oldValue = get(key);
         if (oldValue != null) {
             V newValue = remappingFunction.apply(key, oldValue);
@@ -290,7 +292,7 @@ public class ExpiringMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public synchronized V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+    public synchronized V merge(K key, @NotNull V value, @NotNull BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         V oldValue = get(key);
         V newValue = (oldValue == null) ? value : remappingFunction.apply(oldValue, value);
         if (newValue == null) {
@@ -328,22 +330,24 @@ public class ExpiringMap<K, V> implements Map<K, V> {
         return entry.expireTime <= System.currentTimeMillis();
     }
 
-//    public static void main(String[] args) throws InterruptedException {
-//        ExpiringMap<String, String> cache = new ExpiringMap<>(2000, 1000);
-//
-//        cache.put("temp", "data");
-//        cache.put("long", "term", 5000);
-//
-//        System.out.println("Initial size: " + cache.size()); // 2
-//
-//        System.out.println("Before expiration: " + cache.get("temp")); // data
-//        Thread.sleep(2500);
-//        System.out.println("After expiration: " + cache.get("temp")); // null
-//
-//        cache.renewKey("long", 3000);
-//        System.out.println("Expiration time: " + cache.getExpirationTime("long"));
-//
-//        cache.forEach((k, v) -> System.out.println(k + " -> " + v));
-//        cache.shutdown();
-//    }
+/*
+    public static void main(String[] args) throws InterruptedException {
+        ExpiringMap<String, String> cache = new ExpiringMap<>(2000, 1000);
+
+        cache.put("temp", "data");
+        cache.put("long", "term", 5000);
+
+        System.out.println("Initial size: " + cache.size()); // 2
+
+        System.out.println("Before expiration: " + cache.get("temp")); // data
+        Thread.sleep(2500);
+        System.out.println("After expiration: " + cache.get("temp")); // null
+
+        cache.renewKey("long", 3000);
+        System.out.println("Expiration time: " + cache.getExpirationTime("long"));
+
+        cache.forEach((k, v) -> System.out.println(k + " -> " + v));
+        cache.shutdown();
+    }
+*/
 }
