@@ -100,8 +100,6 @@ public class SignPacketUtils {
         return buildResponse(result, errors);
     }
 
-    // 以下是辅助方法，保持私有并优化结构
-
     private static SignPacketRequest parseSignRequest(String json, List<ErrorEntry> errors) {
         try {
             SignPacketRequest request = GSON.fromJson(json, SignPacketRequest.class);
@@ -115,7 +113,6 @@ public class SignPacketUtils {
             return null;
         }
     }
-
     private static Player validatePlayer(String playerName, List<ErrorEntry> errors) {
         Player player = Bukkit.getPlayerExact(playerName);
         if (player == null || !player.isOnline()) {
@@ -148,7 +145,6 @@ public class SignPacketUtils {
     private static Location findSafeLocation(Player player) {
         Location base = player.getLocation();
         World world = base.getWorld();
-
         // 在玩家周围寻找可用的Y坐标
         int attempts = 0;
         while (attempts++ < 20) {
