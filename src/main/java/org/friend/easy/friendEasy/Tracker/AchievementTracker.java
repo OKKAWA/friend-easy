@@ -10,6 +10,7 @@ import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.friend.easy.friendEasy.WebData.WebSendService;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -142,7 +143,7 @@ public class AchievementTracker implements Listener {
             webSendService.postJson("/api/ServerInfoCollector", buildPayload(achievements).toString(),
                     new WebSendService.HttpResponseCallback() {
                         @Override
-                        public void onSuccess(String body, WebSendService.HttpResponseWrapper response) {
+                        public void onSuccess(String body, WebSendService.HttpResponseWrapper  response) {
                             plugin.getLogger().info(() -> "成功发送 " + achievements.size() + " 项成就数据");
                             isSending.set(false);
                         }

@@ -15,8 +15,7 @@ public class SignPacketUtils {
     private static final Gson GSON = new Gson();
     private static final int MAX_LINES = 4;
     private static final String PACKET_TYPE = "sign_packet";
-    private static final long EDIT_TIMEOUT = 300_000; // 5分钟超时
-    private static final Map<UUID, EditSession> pendingEdits = new ConcurrentHashMap<>();
+    private static final ExpiringMap<UUID, EditSession> pendingEdits = new ExpiringMap<>(100000,20000);
     private static boolean listenerRegistered = false;
 
     public static String processSignPacket(String json, Plugin plugin) {
@@ -226,15 +225,6 @@ public class SignPacketUtils {
             }
         }
         return lines;
-    }
-
-    public static void startCleanupTask(Plugin plugin) {
-        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
-            long now = System.currentTimeMillis();
-            pendingEdits.entrySet().removeIf(entry ->
-                    (now - entry.getValue().createTime) > EDIT_TIMEOUT
-            );
-        }, 6000L, 6000L); // 每30秒清理一次
     }
 
     private static String buildResult(ProcessingResult result, List<ErrorEntry> errors) {
