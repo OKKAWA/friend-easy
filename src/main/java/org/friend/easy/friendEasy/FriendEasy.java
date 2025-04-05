@@ -22,12 +22,12 @@ public class FriendEasy extends JavaPlugin {
     private ServerInfoCollector serverInfoCollector;
     private WebReceiveService webReceiveService;
     private ThreadPool ThreadPool;
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
         reloadConfig();
             getLogger().info(
-                                "卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐卐\n" +
                                 "$$$$$$$$\\           $$\\                           $$\\ $$$$$$$$\\                               \n" +
                                 "$$  _____|          \\__|                          $$ |$$  _____|                              \n" +
                                 "$$ |       $$$$$$\\  $$\\  $$$$$$\\  $$$$$$$\\   $$$$$$$ |$$ |       $$$$$$\\   $$$$$$$\\ $$\\   $$\\ \n" +
