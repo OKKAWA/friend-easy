@@ -12,8 +12,11 @@ import java.util.logging.Logger;
 
 public class WebReceiveService {
     public MultiJettyServer server;
-
-    public void startJettyServer(int MaxThread,int MinThreads, int Port,Plugin plugin) {
+    public final Plugin plugin;
+    public WebReceiveService(Plugin plugin) {
+        this.plugin = plugin;
+    }
+    public void startJettyServer(int MaxThread,int MinThreads, int Port) {
 
             server =new MultiJettyServer(
                     new MultiJettyServer.Config()
@@ -51,7 +54,7 @@ public class WebReceiveService {
         }
 
     }
-    public void stopJettyServer(Plugin plugin) throws Exception {
+    public void stopJettyServer() throws Exception {
         if (server != null) {
             server.stop();
         }

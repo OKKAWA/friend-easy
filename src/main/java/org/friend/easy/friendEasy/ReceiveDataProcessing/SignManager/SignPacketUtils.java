@@ -207,7 +207,6 @@ public class SignPacketUtils {
     private static void handleSignUpdate(PacketEvent event) {
         Player player = event.getPlayer();
         BlockPosition pos = event.getPacket().getBlockPositionModifier().read(0);
-
         pendingEdits.values().stream()
                 .filter(session -> isSamePosition(pos, session.location))
                 .findFirst()
@@ -283,7 +282,6 @@ public class SignPacketUtils {
         result.errors = errors.isEmpty() ? Collections.emptyList() : errors;
         return GSON.toJson(result);
     }
-
     // 内部数据结构优化
     private static class EditSession {
         final UUID sessionId;
@@ -292,7 +290,6 @@ public class SignPacketUtils {
         final Location location;
         volatile String[] editedLines;
         volatile long completeTime;
-
         EditSession(UUID sessionId, long createTime, String[] initialLines, Location location) {
             this.sessionId = sessionId;
             this.createTime = createTime;
@@ -303,7 +300,6 @@ public class SignPacketUtils {
 
     private static class SignPacketRequest { String type; String player; String[] line; }
     private static class SignResultRequest { String type; String uuid; }
-
     private static class ProcessingResult {
         String status;
         String uuid;
@@ -313,7 +309,6 @@ public class SignPacketUtils {
         String[] lines;
         List<ErrorEntry> errors;
     }
-
     private static class ErrorEntry {
         Map<String, Object> failed_entry;
         String error;
