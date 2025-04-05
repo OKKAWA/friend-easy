@@ -1,0 +1,15 @@
+name: friend-easy
+version: '1.0-SNAPSHOT'
+main: org.friend.easy.friendEasy.FriendEasy
+api-version: '1.21'
+softdepend:
+  - ProtocolLib
+libraries:
+#  -com.googlecode.json-simple:json-simple:1.1.1
+#  -com.comphenix.protocol:ProtocolLib:5.1.0
+#  -org.jetbrains:annotations:26.0.2
+# -org.apache.httpcomponents.client5:httpclient5:5.4.2
+#  -org.apache.httpcomponents.core5:httpcore5:5.3.3
+#  -jakarta.servlet:jakarta.servlet-api:6.1.0
+#  -org.apache.tomcat.embed:tomcat-embed-core:11.0.4
+#  -org.apache.tomcat:tomcat-catalina:11.0.4

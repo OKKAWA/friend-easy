@@ -1,0 +1,20 @@
+{
+  "type": "banned",
+  "list":[
+    {
+      "user": "steve",
+      "time": "1L",
+      "reason": "aaa"
+    },
+    {
+      "user": "elex",
+      "time": "1L",
+      "reason": "aaa"
+    },
+    {
+      "ip" : "127.0.0.1",
+      "time": "1L",
+      "reason": "aaa"
+    }
+  ]
+}

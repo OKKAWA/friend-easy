@@ -1,0 +1,32 @@
+ApiServer:
+  port: 8080
+# 发送设置
+webhook:
+  # 接收数据的URL（必填）
+  url: "https://your-webhook-endpoint.com"
+
+  # 请求超时时间（毫秒，默认5000）
+  timeout: 5000
+#接收设置
+
+# 聊天消息跟踪设置
+chat-messages:
+  # 是否启用聊天消息跟踪（true/false）
+  enabled: true
+  send-interval: 20
+  # 每条消息包包含的消息数量（默认10）
+  package-size: 10
+
+# 成就跟踪设置
+achievements:
+  # 是否启用成就跟踪（true/false）
+  enabled: true
+server-info:
+  #缓存时间
+  enabled: true
+  # 玩家数据收集间隔（秒）
+  collection-interval: 60
+  # 可添加以下配置项
+  include-ping: true
+  # 是否包含玩家延迟
+  max-players-to-send: 50 # 最大发送玩家数量（防止数据过大）

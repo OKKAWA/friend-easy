@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/friend-easy.iml" filepath="$PROJECT_DIR$/.idea/modules/friend-easy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/friend-easy.main.iml" filepath="$PROJECT_DIR$/.idea/modules/friend-easy.main.iml" />
+    </modules>
+  </component>
+</project>
