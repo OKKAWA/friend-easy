@@ -3,6 +3,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.friend.easy.friendEasy.EasyProgressBar.ProgressBar;
 import org.friend.easy.friendEasy.Tracker.AchievementTracker;
 import org.friend.easy.friendEasy.Tracker.ChatMessageTracker;
 import org.friend.easy.friendEasy.Tracker.ServerInfoCollector;
@@ -21,13 +22,11 @@ public class FriendEasy extends JavaPlugin {
     private ChatMessageTracker chatMessageTracker;
     private ServerInfoCollector serverInfoCollector;
     private WebReceiveService webReceiveService;
-    private ThreadPool ThreadPool;
 
+    private Thread progressThread;
     @Override
     public void onEnable() {
-        saveDefaultConfig();
-        reloadConfig();
-            getLogger().info(
+        getLogger().info(
                     """
                             $$$$$$$$\\           $$\\                           $$\\ $$$$$$$$\\                              \s
                             $$  _____|          \\__|                          $$ |$$  _____|                             \s
@@ -41,16 +40,17 @@ public class FriendEasy extends JavaPlugin {
                                                                                                                 \\$$$$$$  |
                                                                                                                  \\______/\s
                             FriendEasy----------------------------------------------------------------------------------------------
-                            Starting..........""");
+                            """);
         Beep.Beep(this);
+
         FileConfiguration config = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "config.yml"));
         String webhookUrl = config.getString("webhook.url");
-        ThreadPool =new ThreadPool(8);
+
         boolean trackAchievements = config.getBoolean("achievements.enabled", true);
         boolean trackChatMessages = config.getBoolean("chat-messages.enabled", true);
         boolean trackServerInfos = config.getBoolean("server-infos.enabled", true);
         int apiPort = config.getInt("ApiServer.port");
-        webReceiveService = new WebReceiveService();
+        webReceiveService = new WebReceiveService(this);
         //检查参数
         if (Objects.isNull(webhookUrl)) {
             getLogger().severe("The webhook url is missing!");
@@ -94,7 +94,7 @@ public class FriendEasy extends JavaPlugin {
             getLogger().warning("所有跟踪功能都已禁用！");
         }
         try {
-            webReceiveService.startJettyServer(5, 1,1234,this);
+            webReceiveService.startJettyServer(5, 1,1234);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -114,10 +114,9 @@ public class FriendEasy extends JavaPlugin {
         }
         getLogger().warning("serverInfoCollector is disabled");
         try {
-            webReceiveService.stopJettyServer(this);
+            webReceiveService.stopJettyServer();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        ThreadPool.StopExecutorService();
     }
 }

@@ -11,6 +11,7 @@ import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
 
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import java.util.Map;
@@ -36,7 +37,10 @@ public class MultiJettyServer {
         private boolean showServerHeader = false;
         private Plugin plugin = null;
         private boolean useLog = false;
-
+        private boolean useSsl = false;
+        private String keystorePath;
+        private String keystorePassword;
+        private String keystoreType = "PKCS12";
         public Config port(int port) {
             this.port = port;
             return this;
@@ -63,6 +67,25 @@ public class MultiJettyServer {
         }
         public Config useLog(boolean useLog) {
             this.useLog = useLog;
+            return this;
+        }
+        public Config useSsl(boolean useSsl) {
+            this.useSsl = useSsl;
+            return this;
+        }
+
+        public Config keystorePath(String keystorePath) {
+            this.keystorePath = keystorePath;
+            return this;
+        }
+
+        public Config keystorePassword(String keystorePassword) {
+            this.keystorePassword = keystorePassword;
+            return this;
+        }
+
+        public Config keystoreType(String keystoreType) {
+            this.keystoreType = keystoreType;
             return this;
         }
     }
@@ -127,19 +150,52 @@ public class MultiJettyServer {
         server.start();
 //        server.join();
     }
+    private HttpConfiguration configHttp() {
+        HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.addCustomizer(new SecureRequestCustomizer());
+        return httpConfig;
+    }
 
     private ServerConnector createConnector() {
-        ServerConnector connector = new ServerConnector(server);
-        connector.setPort(config.port);
-        connector.setIdleTimeout(config.idleTimeout);
+        if (config.useSsl) {
+            if (config.keystorePath == null || config.keystorePassword == null) {
+                throw new IllegalStateException("SSL requires keystorePath and keystorePassword");
+            }
 
-        HttpConfiguration httpConfig = new HttpConfiguration();
-        httpConfig.setRequestHeaderSize(config.requestHeaderSize);
-        httpConfig.setSendServerVersion(config.showServerHeader);
+            // SSL上下文配置
+            SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
+            sslContextFactory.setKeyStorePath(config.keystorePath);
+            sslContextFactory.setKeyStorePassword(config.keystorePassword);
+            sslContextFactory.setKeyStoreType(config.keystoreType);
 
-        connector.addConnectionFactory(new HttpConnectionFactory(httpConfig));
-        return connector;
+            // HTTP配置
+            HttpConfiguration httpsConfig = new HttpConfiguration();
+            httpsConfig.setRequestHeaderSize(config.requestHeaderSize);
+            httpsConfig.setSendServerVersion(config.showServerHeader);
+            httpsConfig.addCustomizer(new SecureRequestCustomizer());
+
+            // 创建HTTPS连接器
+            ServerConnector sslConnector = new ServerConnector(
+                    server,
+                    new SslConnectionFactory(sslContextFactory, "http/1.1"),
+                    new HttpConnectionFactory(httpsConfig));
+            sslConnector.setPort(config.port);
+            sslConnector.setIdleTimeout(config.idleTimeout);
+            return sslConnector;
+        } else {
+            ServerConnector connector = new ServerConnector(server);
+            connector.setPort(config.port);
+            connector.setIdleTimeout(config.idleTimeout);
+
+            HttpConfiguration httpConfig = new HttpConfiguration();
+            httpConfig.setRequestHeaderSize(config.requestHeaderSize);
+            httpConfig.setSendServerVersion(config.showServerHeader);
+
+            connector.addConnectionFactory(new HttpConnectionFactory(httpConfig));
+            return connector;
+        }
     }
+
 
     public void stop() throws Exception {
         if (server != null) {
