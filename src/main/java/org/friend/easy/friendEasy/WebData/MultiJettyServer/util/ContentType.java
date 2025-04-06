@@ -1,4 +1,4 @@
-package org.friend.easy.friendEasy.WebData.MultiJettyServer;
+package org.friend.easy.friendEasy.WebData.MultiJettyServer.util;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

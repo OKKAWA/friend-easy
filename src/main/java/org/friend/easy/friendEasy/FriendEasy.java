@@ -23,9 +23,13 @@ public class FriendEasy extends JavaPlugin {
     private ServerInfoCollector serverInfoCollector;
     private WebReceiveService webReceiveService;
 
-    private Thread progressThread;
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+        ProgressBar progressBar =new ProgressBar(getLogger());
+        Thread thread = new Thread(progressBar);
+        progressBar.setCenterText("STARTING!");
+        thread.start();
         getLogger().info(
                     """
                             $$$$$$$$\\           $$\\                           $$\\ $$$$$$$$\\                              \s
@@ -41,27 +45,31 @@ public class FriendEasy extends JavaPlugin {
                                                                                                                  \\______/\s
                             FriendEasy----------------------------------------------------------------------------------------------
                             """);
-        Beep.Beep(this);
-
+        if(false){
+            Beep.Beep(this);
+        }
+        progressBar.setProgress(20);
         FileConfiguration config = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "config.yml"));
         String webhookUrl = config.getString("webhook.url");
-
         boolean trackAchievements = config.getBoolean("achievements.enabled", true);
         boolean trackChatMessages = config.getBoolean("chat-messages.enabled", true);
         boolean trackServerInfos = config.getBoolean("server-infos.enabled", true);
         int apiPort = config.getInt("ApiServer.port");
         webReceiveService = new WebReceiveService(this);
+        progressBar.setProgress(30);
         //检查参数
         if (Objects.isNull(webhookUrl)) {
             getLogger().severe("The webhook url is missing!");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
+        progressBar.setProgress(40);
         if (Objects.isNull(apiPort)) {
             getLogger().severe("The ApiPort is missing!");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
+        progressBar.setProgress(70);
         //配置
         WebSendService.setBaseUrl(webhookUrl);
         WebSendService.plugin(this);
@@ -98,7 +106,7 @@ public class FriendEasy extends JavaPlugin {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
+        progressBar.setProgress(100);
     }
 
     @Override

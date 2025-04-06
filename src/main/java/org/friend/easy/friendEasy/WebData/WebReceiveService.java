@@ -3,12 +3,10 @@ package org.friend.easy.friendEasy.WebData;
 
 import org.bukkit.plugin.Plugin;
 import org.friend.easy.friendEasy.ReceiveDataProcessing.BanManager;
-import org.friend.easy.friendEasy.WebData.MultiJettyServer.ContentType;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.MultiJettyServer;
 
 import org.friend.easy.friendEasy.ReceiveDataProcessing.MessageManager;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.Logger;
 
 public class WebReceiveService {
     public MultiJettyServer server;

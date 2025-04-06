@@ -300,6 +300,7 @@ import org.apache.hc.core5.http.ProtocolException;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.hc.core5.util.Timeout;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -461,31 +462,45 @@ public class WebSendService {
             }
         });
     }
-
     private static void handleResponse(@Nullable SimpleHttpResponse response,
                                        @Nullable Exception ex,
                                        String url,
                                        HttpResponseCallback callback) {
         if (ex != null) {
-            plugin.getLogger().warning("[executeRequest.onFailure] " + plugin.getName() + "-X->" + url);
-            callback.onFailure(ex, null);
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                plugin.getLogger().warning("[executeRequest.onFailure] " + plugin.getName() + "-X->" + url);
+                callback.onFailure(ex, null);
+            });
+
+
+
             return;
         }
 
         if (response != null) {
             if (response.getCode() >= 200 && response.getCode() < 300) {
-                plugin.getLogger().info("[executeRequest.Success] " + plugin.getName() + "->" + url);
-                callback.onSuccess(response.getBodyText(), new HttpResponseWrapper(response));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                            plugin.getLogger().info("[executeRequest.Success] " + plugin.getName() + "->" + url);
+                            callback.onSuccess(response.getBodyText(), new HttpResponseWrapper(response));
+                        }
+                );
+
+
             } else {
-                plugin.getLogger().warning("[executeRequest.Failure] " + plugin.getName() + "-X->" + url);
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        plugin.getLogger().warning("[executeRequest.Failure] " + plugin.getName() + "-X->" + url));
                 callback.onFailure(new Exception("HTTP error: " + response.getCode()),
                         new HttpResponseWrapper(response));
+
+
             }
         }
     }
 
     public interface HttpResponseCallback {
         void onSuccess(@Nullable String responseBody, @NotNull HttpResponseWrapper response);
+
         void onFailure(@NotNull Throwable t, @Nullable HttpResponseWrapper response);
     }
 

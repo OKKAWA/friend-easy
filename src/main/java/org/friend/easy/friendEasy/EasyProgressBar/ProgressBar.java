@@ -1,5 +1,7 @@
 package org.friend.easy.friendEasy.EasyProgressBar;
 
+import org.bukkit.plugin.Plugin;
+
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
@@ -62,30 +64,12 @@ public class ProgressBar implements Runnable {
                 Thread.sleep(100);
             }
             System.out.println(); // 完成后换行
-            logger.info("Progress completed: {}%", progress.get());
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.error("Progress bar interrupted", e);
+            logger.severe("Progress bar interrupted"+e);
         }
     }
 
-//    public static void main(String[] args) throws InterruptedException {
-//        ProgressBar progressBar = new ProgressBar();
-//        Thread progressThread = new Thread(progressBar);
-//        progressThread.start();
 //
-//        // 模拟任务执行
-//        for (int i = 0; i <= 100; i++) {
-//            Thread.sleep(50);
-//            progressBar.setProgress(i);
-//
-//            if (i % 20 == 0) {
-//                progressBar.setCenterText("Processing stage " + (i/20 + 1));
-//            }
-//        }
-//
-//        progressBar.complete();
-//        progressThread.join();
-//        logger.info("Main process continues...");
-//    }
 }

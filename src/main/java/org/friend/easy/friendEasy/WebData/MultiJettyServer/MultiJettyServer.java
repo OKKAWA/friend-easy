@@ -13,6 +13,7 @@ import org.eclipse.jetty.server.Server;
 
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
 
 import java.util.Map;
 import java.io.ByteArrayOutputStream;
