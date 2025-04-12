@@ -1,4 +1,4 @@
-package org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager;
+package org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager.v1;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;

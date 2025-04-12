@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/friend-easy.iml" filepath="$PROJECT_DIR$/.idea/modules/friend-easy.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/friend-easy.main.iml" filepath="$PROJECT_DIR$/.idea/modules/friend-easy.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.friend.easy.friend-easy.main.iml" filepath="$PROJECT_DIR$/.idea/modules/org.friend.easy.friend-easy.main.iml" />
     </modules>
   </component>
 </project>

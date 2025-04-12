@@ -1,4 +1,4 @@
-package org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager;
+package org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager.v1;
 
 import com.comphenix.protocol.*;
 import com.comphenix.protocol.events.*;
@@ -8,10 +8,8 @@ import com.google.gson.JsonSyntaxException;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class SignPacketUtils {
     // 常量定义
