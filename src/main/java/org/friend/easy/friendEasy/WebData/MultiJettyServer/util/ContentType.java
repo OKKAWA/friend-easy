@@ -4,11 +4,22 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+/**
+ * 表示和解析HTTP Content-Type头部字段。
+ * 包含类型(type)、子类型(subtype)和参数(parameters)，例如："text/html; charset=UTF-8"。
+ */
 public class ContentType {
+    // 主类型，如"text"、"application"
     private final String type;
+    // 子类型，如"html"、"json"
     private final String subtype;
+    // 参数键值对，保持插入顺序，如charset=UTF-8
     private final Map<String, String> parameters;
 
+    /**
+     * 预定义常用Content-Type常量的接口。
+     * 包含如"application/json"、"text/html"等标准MIME类型。
+     */
     public interface SimpleContentType {
         String CONTENT_JSON = "application/json";
         String CONTENT_STAR = "application/octet-stream";
@@ -212,29 +223,48 @@ public class ContentType {
         String CONTENT_ZOO = "application/x-zoo";
     }
 
-
+    /**
+     * 根据参数值判断是否需要添加引号，并处理转义。
+     * @param value 参数值
+     * @return 若值符合token规范则返回原值，否则返回带转义引号的字符串
+     */
     private String quoteIfNeeded(String value) {
         if (ContentTypeTool.isValidToken(value)) {
             return value;
         }
+        // 转义双引号并添加外围引号
         return "\"" + value.replace("\"", "\\\"") + "\"";
     }
 
+    /**
+     * ContentType解析工具类，包含验证和解析逻辑。
+     */
     public static class ContentTypeTool {
+        // 符合RFC规范的token正则表达式
         private static Pattern TOKEN_PATTERN = Pattern.compile("^[a-zA-Z0-9!#$%&'*+\\-.^_`|~]+$");
 
-        public ContentTypeTool() {
-        }
-
+        /**
+         * 验证字符串是否符合token规范。
+         * @param s 待验证字符串
+         * @return 验证结果
+         */
         private static boolean isValidToken(String s) {
             return TOKEN_PATTERN.matcher(s).matches();
         }
 
+        /**
+         * 解析Content-Type字符串为ContentType对象。
+         * @param contentType 格式如"type/subtype; param1=value1"
+         * @return 解析后的ContentType对象
+         * @throws IllegalArgumentException 当输入格式无效时抛出
+         */
         public ContentType parse(String contentType) {
+            // 验证输入非空
             if (contentType == null || contentType.isEmpty()) {
                 throw new IllegalArgumentException("ContentType cannot be null or empty");
             }
 
+            // 分割主类型和参数部分
             String[] parts = contentType.split(";", 2);
             String fullType = parts[0].trim();
             String[] typeParts = fullType.split("/", 2);
@@ -242,28 +272,35 @@ public class ContentType {
                 throw new IllegalArgumentException("Invalid content type format: " + contentType);
             }
 
+            // 创建ContentType实例
             ContentType result = new ContentType(typeParts[0].trim(), typeParts[1].trim());
 
+            // 解析参数
             if (parts.length > 1) {
                 parseParameters(parts[1], result.parameters);
             }
             return result;
-
         }
 
+        /**
+         * 解析参数字符串到参数Map。
+         * @param paramsString 参数字符串，如"charset=UTF-8; version=1.0"
+         * @param parameters 参数存储的Map
+         */
         private void parseParameters(String paramsString, Map<String, String> parameters) {
             String[] params = paramsString.split(";");
             for (String param : params) {
                 param = param.trim();
                 if (param.isEmpty()) continue;
 
+                // 分割键值对
                 String[] keyValue = param.split("=", 2);
                 if (keyValue.length != 2) continue;
 
-                String key = keyValue[0].trim().toLowerCase();
+                String key = keyValue[0].trim().toLowerCase(); // 键转为小写
                 String value = keyValue[1].trim();
 
-                // Remove surrounding quotes and handle escaped characters
+                // 处理带引号的值
                 if (value.startsWith("\"") && value.endsWith("\"")) {
                     value = unquote(value);
                 }
@@ -272,13 +309,25 @@ public class ContentType {
             }
         }
 
+        /**
+         * 去除值的外围引号并处理转义字符。
+         * @param value 带引号的字符串
+         * @return 处理后的纯字符串
+         */
         private String unquote(String value) {
             return value.substring(1, value.length() - 1)
-                    .replaceAll("\\\\(.)", "$1");
+                    .replaceAll("\\\\(.)", "$1"); // 处理转义字符，如\"转为"
         }
     }
 
+    /**
+     * 构造ContentType实例。
+     * @param type 主类型，必须符合token规范
+     * @param subtype 子类型，必须符合token规范
+     * @throws IllegalArgumentException 当类型或子类型无效时抛出
+     */
     public ContentType(String type, String subtype) {
+        // 验证类型和子类型的有效性
         if (!ContentTypeTool.isValidToken(type)) {
             throw new IllegalArgumentException("Invalid type: " + type);
         }
@@ -287,9 +336,14 @@ public class ContentType {
         }
         this.type = type;
         this.subtype = subtype;
-        this.parameters = new LinkedHashMap<>();
+        this.parameters = new LinkedHashMap<>(); // 保持参数顺序
     }
 
+    /**
+     * 设置字符集参数。
+     * @param charset 字符集名称，如"UTF-8"。传空或null则移除该参数
+     * @return 当前对象，支持链式调用
+     */
     public ContentType setCharset(String charset) {
         if (charset == null || charset.isEmpty()) {
             parameters.remove("charset");
@@ -299,35 +353,54 @@ public class ContentType {
         return this;
     }
 
+    /**
+     * 获取当前字符集参数值。
+     * @return 字符集字符串，若不存在返回null
+     */
     public String getCharset() {
         return parameters.get("charset");
     }
 
+    /**
+     * 添加或更新参数。
+     * @param key 参数键（自动转为小写）
+     * @param value 参数值
+     * @return 当前对象，支持链式调用
+     */
     public ContentType addParameter(String key, String value) {
         parameters.put(key.toLowerCase(), value);
         return this;
     }
 
+    /**
+     * 移除指定参数。
+     * @param key 参数键（不区分大小写）
+     * @return 当前对象，支持链式调用
+     */
     public ContentType removeParameter(String key) {
         parameters.remove(key.toLowerCase());
         return this;
     }
 
-    public String getType() {
-        return type;
-    }
+    // 以下为getter方法
+    public String getType() { return type; }
+    public String getSubtype() { return subtype; }
 
-    public String getSubtype() {
-        return subtype;
-    }
-
+    /**
+     * 生成符合规范的Content-Type字符串。
+     * @return 如"text/html; charset=UTF-8"
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(type).append('/').append(subtype);
 
+        // 拼接参数，自动处理引号
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            sb.append("; ").append(entry.getKey()).append('=').append(quoteIfNeeded(entry.getValue()));
+            sb.append("; ")
+                    .append(entry.getKey())
+                    .append('=')
+                    .append(quoteIfNeeded(entry.getValue()));
         }
         return sb.toString();
     }

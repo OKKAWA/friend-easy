@@ -36,7 +36,8 @@ dependencies {
     implementation 'org.lwjgl:lwjgl-opengl:3.3.6'
     implementation 'org.lwjgl:lwjgl:3.3.6'
     implementation 'de.tr7zw:item-nbt-api:2.14.0'
-    implementation 'me.tongfei:progressbar:0.10.1'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.79'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.79'
 }
 
 def targetJavaVersion = 21

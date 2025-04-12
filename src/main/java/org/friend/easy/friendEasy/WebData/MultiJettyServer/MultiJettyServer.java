@@ -14,6 +14,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.JKSManager;
 
 import java.util.Map;
 import java.io.ByteArrayOutputStream;
@@ -39,7 +40,7 @@ public class MultiJettyServer {
         private Plugin plugin = null;
         private boolean useLog = false;
         private boolean useSsl = false;
-        private String keystorePath;
+        private JKSManager keystorePath;
         private String keystorePassword;
         private String keystoreType = "PKCS12";
         public Config port(int port) {
@@ -75,7 +76,7 @@ public class MultiJettyServer {
             return this;
         }
 
-        public Config keystorePath(String keystorePath) {
+        public Config keystorePath(JKSManager keystorePath) {
             this.keystorePath = keystorePath;
             return this;
         }
@@ -113,8 +114,6 @@ public class MultiJettyServer {
     public static void setDebugDisable() {
         Logger specificLogger = Logger.getLogger("org.eclipse.jetty");
         specificLogger.setLevel(Level.OFF);
-
-        specificLogger.setUseParentHandlers(false);
         Stream.of(specificLogger.getHandlers())
                 .forEach(handler -> handler.setLevel(Level.OFF));
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off");

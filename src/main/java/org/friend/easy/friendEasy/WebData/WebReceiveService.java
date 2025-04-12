@@ -33,21 +33,21 @@ public class WebReceiveService {
         }
 
     }
-    class BannedProcessor implements MultiJettyServer.RequestProcessor {
+    class BannedProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
 
         @Override
         public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, Plugin plugin, MultiJettyServer.ResultData result) throws Exception {
             result.setBody(BanManager.BannedByJSON(data.body(), plugin));
-            result.setContentType(new ContentType.ContentTypeTool().parse(ContentType.SimpleContentType.CONTENT_JSON).setCharset("UTF-8"));
+            result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }
 
     }
-    class MessageProcessor implements MultiJettyServer.RequestProcessor {
+    class MessageProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
         public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, Plugin plugin, MultiJettyServer.ResultData result) throws Exception {
             result.setBody(MessageManager.SendMessageByJSON(data.body(),plugin));
-            result.setContentType(new ContentType.ContentTypeTool().parse(ContentType.SimpleContentType.CONTENT_JSON).setCharset("UTF-8"));
+            result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }
 
