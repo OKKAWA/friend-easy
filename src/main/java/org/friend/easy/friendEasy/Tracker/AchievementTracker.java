@@ -106,15 +106,10 @@ public class AchievementTracker implements Listener {
         json.addProperty("type", "achievement");
         json.addProperty("player_name", player.getName());
 
-        if (config.includePlayerUuid) {
-            json.addProperty("player_uuid", player.getUniqueId().toString());
-        }
-        if (config.includeTimestamp) {
-            json.addProperty("timestamp", System.currentTimeMillis());
-        }
-        if (config.includeAdvancement) {
-            json.addProperty("advancement", advancementKey);
-        }
+        if (config.includePlayerUuid) json.addProperty("player_uuid", player.getUniqueId().toString());
+        if (config.includeTimestamp) json.addProperty("timestamp", System.currentTimeMillis());
+        if (config.includeAdvancement)json.addProperty("advancement", advancementKey);
+
         return json;
     }
 

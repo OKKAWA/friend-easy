@@ -1,4 +1,4 @@
-package org.friend.easy.friendEasy.WebData.MultiJettyServer;
+package org.friend.easy.friendEasy.WebData.MultiJettyServer.core;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -13,8 +13,8 @@ import org.eclipse.jetty.server.Server;
 
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.SSLConfigTool.SSLManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
-import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.JKSManager;
 
 import java.util.Map;
 import java.io.ByteArrayOutputStream;
@@ -40,9 +40,7 @@ public class MultiJettyServer {
         private Plugin plugin = null;
         private boolean useLog = false;
         private boolean useSsl = false;
-        private JKSManager keystorePath;
-        private String keystorePassword;
-        private String keystoreType = "PKCS12";
+        private SSLManager.SSLConfig sslConfig = null;
         public Config port(int port) {
             this.port = port;
             return this;
@@ -76,20 +74,11 @@ public class MultiJettyServer {
             return this;
         }
 
-        public Config keystorePath(JKSManager keystorePath) {
-            this.keystorePath = keystorePath;
+        public Config SSLConfig(SSLManager.SSLConfig ssLConfig) {
+            this.sslConfig = ssLConfig;
             return this;
         }
-
-        public Config keystorePassword(String keystorePassword) {
-            this.keystorePassword = keystorePassword;
-            return this;
-        }
-
-        public Config keystoreType(String keystoreType) {
-            this.keystoreType = keystoreType;
-            return this;
-        }
+        
     }
 
     private final Config config;
@@ -116,7 +105,6 @@ public class MultiJettyServer {
         specificLogger.setLevel(Level.OFF);
         Stream.of(specificLogger.getHandlers())
                 .forEach(handler -> handler.setLevel(Level.OFF));
-        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off");
     }
     public void start() throws Exception {
 
@@ -142,10 +130,10 @@ public class MultiJettyServer {
 
         for (ApiEndpoint endpoint : endpoints) {
             ServletHolder holder = new ServletHolder(new AsyncApiServlet(endpoint.processor()));
+
             holder.setAsyncSupported(true);
             contextHandler.addServlet(holder, endpoint.path());
         }
-
         server.setHandler(contextHandler);
         server.start();
 //        server.join();
@@ -155,18 +143,19 @@ public class MultiJettyServer {
         httpConfig.addCustomizer(new SecureRequestCustomizer());
         return httpConfig;
     }
-
     private ServerConnector createConnector() {
-        if (config.useSsl) {
-            if (config.keystorePath == null || config.keystorePassword == null) {
-                throw new IllegalStateException("SSL requires keystorePath and keystorePassword");
-            }
-
+        if (config.useSsl || config.sslConfig != null) {
             // SSL上下文配置
             SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
-            sslContextFactory.setKeyStorePath(config.keystorePath);
-            sslContextFactory.setKeyStorePassword(config.keystorePassword);
-            sslContextFactory.setKeyStoreType(config.keystoreType);
+            sslContextFactory.setKeyStorePath(config.sslConfig.keystorePath);
+            sslContextFactory.setKeyStorePassword(config.sslConfig.keystorePass);
+            sslContextFactory.setKeyManagerPassword(config.sslConfig.keyManagerPass);
+            sslContextFactory.setProtocol(config.sslConfig.sslProtocol);
+            sslContextFactory.setKeyStoreType(config.sslConfig.keystoreType);
+            //-----------------------分割----------------------------
+            sslContextFactory.setTrustStorePassword(config.sslConfig.truststorePass);
+            sslContextFactory.setTrustStorePath(config.sslConfig.truststorePath);
+            sslContextFactory.setTrustStoreType(config.sslConfig.truststoreType);
 
             // HTTP配置
             HttpConfiguration httpsConfig = new HttpConfiguration();

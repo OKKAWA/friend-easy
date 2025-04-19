@@ -111,6 +111,10 @@ public class FriendEasy extends JavaPlugin {
             serverInfoCollector.disable();
         }
         getLogger().warning("serverInfoCollector is disabled");
+        if(achievementTracker != null) {
+            achievementTracker.disable();
+        }
+        getLogger().warning("achievementTracker is disabled");
         try {
             webReceiveService.stopJettyServer();
         } catch (Exception e) {
