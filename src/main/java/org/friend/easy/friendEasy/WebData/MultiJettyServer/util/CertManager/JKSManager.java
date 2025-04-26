@@ -14,10 +14,9 @@ import java.util.logging.Logger;
  * 支持递归遍历子目录，并自动创建缺失的目录结构。
  */
 public class JKSManager {
-    private static final Logger LOGGER = Logger.getLogger(JKSManager.class.getName());
+    private static Logger LOGGER;
     private final List<File> files;
 
-    // 私有构造函数，防止外部直接实例化
     private JKSManager(List<File> files) {
         this.files = Collections.unmodifiableList(files); // 防止列表被外部修改
     }
@@ -33,7 +32,7 @@ public class JKSManager {
         File targetDir = new File(plugin.getDataFolder(), child);
         List<File> allFiles = listAllFile(targetDir);
         List<File> jksFiles = new ArrayList<>();
-
+        LOGGER = plugin.getLogger();
         for (File file : allFiles) {
             if (file.getName().toLowerCase().endsWith(".jks")) {
                 jksFiles.add(file);
@@ -126,7 +125,7 @@ public class JKSManager {
     // 以下为扩展方法 -------------------------------------------------
 
     /**
-     * 添加对多个扩展名的支持（示例方法）
+     * 添加对多个扩展名的支持
      */
     public static JKSManager getFilesByExtensions(Plugin plugin, String child, String... extensions) {
         File targetDir = new File(plugin.getDataFolder(), child);
@@ -144,9 +143,8 @@ public class JKSManager {
 
         return new JKSManager(filteredFiles);
     }
-
     /**
-     * 重新加载文件列表（示例方法）
+     * 重新加载文件列表
      */
     public JKSManager reload(Plugin plugin, String child) {
         return getJKS(plugin, child);

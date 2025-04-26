@@ -8,12 +8,13 @@ import org.friend.easy.friendEasy.Tracker.ChatMessageTracker;
 import org.friend.easy.friendEasy.Tracker.ServerInfoCollector;
 import org.friend.easy.friendEasy.WebData.*;
 
-import org.friend.easy.friendEasy.ThreadPool.ThreadPool;
 
 import java.io.File;
 import java.util.Objects;
 
 import org.friend.easy.friendEasy.OsCall.Beep;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.SSLConfigTool.SSLManager;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.PortTool;
 
 public class FriendEasy extends JavaPlugin {
     private WebSendService webSendService;
@@ -43,12 +44,15 @@ public class FriendEasy extends JavaPlugin {
         if(false){
             Beep.Beep(this);
         }
-        FileConfiguration config = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "config.yml"));
+        File configFile = new File(getDataFolder(), "config.yml");
+        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+
         String webhookUrl = config.getString("webhook.url");
         boolean trackAchievements = config.getBoolean("achievements.enabled", true);
         boolean trackChatMessages = config.getBoolean("chat-messages.enabled", true);
         boolean trackServerInfos = config.getBoolean("server-infos.enabled", true);
-        int apiPort = config.getInt("ApiServer.port");
+        int apiPort = config.getInt("apiServer.port");
+        webSendService = new WebSendService(this);
         webReceiveService = new WebReceiveService(this);
         //检查参数
         if (Objects.isNull(webhookUrl)) {
@@ -56,14 +60,13 @@ public class FriendEasy extends JavaPlugin {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
-        if (Objects.isNull(apiPort)) {
+        if (PortTool.isValidPort(apiPort)) {
             getLogger().severe("The ApiPort is missing!");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
         //配置
-        WebSendService.setBaseUrl(webhookUrl);
-        WebSendService.plugin(this);
+        webSendService.setBaseUrl(webhookUrl);
 
         if (trackAchievements) {
             achievementTracker = new AchievementTracker(new AchievementTracker.IncludeConfig.Builder()
@@ -93,7 +96,11 @@ public class FriendEasy extends JavaPlugin {
             getLogger().warning("所有跟踪功能都已禁用！");
         }
         try {
-            webReceiveService.startJettyServer(5, 1,1234);
+            webReceiveService.startJettyServer(5, 1,apiPort,
+                    SSLManager.create()
+                    .keystorePath(webReceiveService.getSSLFile().getAbsolutePath())
+                    .clientAuthMode(SSLManager.ClientAuthMode.NONE)
+                            .build());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

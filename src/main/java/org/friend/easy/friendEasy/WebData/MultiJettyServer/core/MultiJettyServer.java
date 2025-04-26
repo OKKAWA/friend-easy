@@ -13,7 +13,7 @@ import org.eclipse.jetty.server.Server;
 
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.SSLConfigTool.SSLManager;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.SSLConfigTool.SSLManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
 
 import java.util.Map;
@@ -122,7 +122,6 @@ public class MultiJettyServer {
         threadPool.setName("jetty-io");
         server = new Server(threadPool);
 
-
         ServerConnector connector = createConnector();
         server.setConnectors(new Connector[]{connector});
         ServletContextHandler contextHandler = new ServletContextHandler();
@@ -130,7 +129,6 @@ public class MultiJettyServer {
 
         for (ApiEndpoint endpoint : endpoints) {
             ServletHolder holder = new ServletHolder(new AsyncApiServlet(endpoint.processor()));
-
             holder.setAsyncSupported(true);
             contextHandler.addServlet(holder, endpoint.path());
         }
@@ -145,18 +143,19 @@ public class MultiJettyServer {
     }
     private ServerConnector createConnector() {
         if (config.useSsl || config.sslConfig != null) {
-            // SSL上下文配置
-            SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
-            sslContextFactory.setKeyStorePath(config.sslConfig.keystorePath);
-            sslContextFactory.setKeyStorePassword(config.sslConfig.keystorePass);
-            sslContextFactory.setKeyManagerPassword(config.sslConfig.keyManagerPass);
-            sslContextFactory.setProtocol(config.sslConfig.sslProtocol);
-            sslContextFactory.setKeyStoreType(config.sslConfig.keystoreType);
-            //-----------------------分割----------------------------
-            sslContextFactory.setTrustStorePassword(config.sslConfig.truststorePass);
-            sslContextFactory.setTrustStorePath(config.sslConfig.truststorePath);
-            sslContextFactory.setTrustStoreType(config.sslConfig.truststoreType);
-
+//            // SSL上下文配置
+              SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
+//            sslContextFactory.setKeyStorePath(config.sslConfig.keystorePath);
+//            sslContextFactory.setKeyStorePassword(config.sslConfig.keystorePass);
+//            sslContextFactory.setKeyManagerPassword(config.sslConfig.keyManagerPass);
+//            sslContextFactory.setProtocol(config.sslConfig.sslProtocol);
+//            sslContextFactory.setKeyStoreType(config.sslConfig.keystoreType);
+//            //-----------------------分割----------------------------
+//            sslContextFactory.setTrustStorePassword(config.sslConfig.truststorePass);
+//            sslContextFactory.setTrustStorePath(config.sslConfig.truststorePath);
+//            sslContextFactory.setTrustStoreType(config.sslConfig.truststoreType);
+            SSLConfigurator sslConfigurator = new SSLConfigurator();
+            sslContextFactory = sslConfigurator.createSslContextFactory(config.sslConfig);
             // HTTP配置
             HttpConfiguration httpsConfig = new HttpConfiguration();
             httpsConfig.setRequestHeaderSize(config.requestHeaderSize);

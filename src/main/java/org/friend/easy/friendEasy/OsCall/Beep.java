@@ -27,7 +27,7 @@ public class Beep {
             line.drain();
             line.close();
         } catch (LineUnavailableException e) {
-            e.printStackTrace();
+
         }finally {
             plugin.getLogger().info("Beep!");
         }

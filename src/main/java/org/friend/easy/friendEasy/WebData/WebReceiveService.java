@@ -3,6 +3,7 @@ package org.friend.easy.friendEasy.WebData;
 
 import org.bukkit.plugin.Plugin;
 import org.friend.easy.friendEasy.ReceiveDataProcessing.BanManager;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.SSLConfigTool.SSLManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.JKSManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.MultiJettyServer;
@@ -18,7 +19,7 @@ public class WebReceiveService {
     public WebReceiveService(Plugin plugin) {
         this.plugin = plugin;
     }
-    private File getSSLFileByTime(){
+    public File getSSLFileByTime(){
         ArrayList<Date> dateList = new ArrayList<>();
         Map<Date,File> dateFilesMap = new HashMap<>();
         JKSManager jksManager = JKSManager.getJKS(plugin, "/SSLFiles");
@@ -32,7 +33,17 @@ public class WebReceiveService {
         dateList.sort(Date::compareTo);
         return dateFilesMap.get(dateList.get(0));
     }
-    public void startJettyServer(int MaxThread,int MinThreads, int Port) {
+    public File getSSLFile(){
+        JKSManager jksManager = JKSManager.getJKS(plugin, "/SSLFiles");
+        if(jksManager.getFiles().stream().count() <=0){
+            throw new RuntimeException("No SSL files found");
+        }
+        if(jksManager.getFiles().stream().count() > 1){
+            throw new RuntimeException("Too many SSL files found");
+        }
+        return jksManager.getFiles().get(0);
+    }
+    public void startJettyServer(int MaxThread, int MinThreads, int Port, SSLManager.SSLConfig sslConfig) {
 
         server =new MultiJettyServer(
                     new MultiJettyServer.Config()
@@ -43,7 +54,7 @@ public class WebReceiveService {
                             .hideServerHeader()
                             .useLog(false)
                             .useSsl(true)
-                                )
+                            .SSLConfig(sslConfig))
                 .addEndpoint("/api/banned", new BannedProcessor()).addEndpoint("/api/message", new MessageProcessor());
             plugin.getLogger().info("Starting Jetty Server!");
         try {

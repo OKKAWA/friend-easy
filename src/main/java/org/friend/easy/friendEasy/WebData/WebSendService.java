@@ -14,29 +14,29 @@
 //import javax.net.ssl.*;
 //
 //public class WebSendService {
-//    private static volatile OkHttpClient client;
-//    private static volatile String baseUrl;
+//    private  volatile OkHttpClient client;
+//    private  volatile String baseUrl;
 //
 //    // 默认超时配置（秒）
-//    private static final int DEFAULT_CONNECT_TIMEOUT = 10;
-//    private static final int DEFAULT_WRITE_TIMEOUT = 10;
-//    private static final int DEFAULT_READ_TIMEOUT = 20;
+//    private  final int DEFAULT_CONNECT_TIMEOUT = 10;
+//    private  final int DEFAULT_WRITE_TIMEOUT = 10;
+//    private  final int DEFAULT_READ_TIMEOUT = 20;
 //
 //    // 单例初始化锁
-//    private static final Object INIT_LOCK = new Object();
+//    private  final Object INIT_LOCK = new Object();
 //
 //    // 安全相关配置
-//    private static volatile boolean sslValidationEnabled = true;
-//    private static volatile SSLSocketFactory customSslSocketFactory;
-//    private static volatile X509TrustManager customTrustManager;
-//    private static Plugin plugin;
-//    private static final String PluginName = plugin.getName().toLowerCase();
+//    private  volatile boolean sslValidationEnabled = true;
+//    private  volatile SSLSocketFactory customSslSocketFactory;
+//    private  volatile X509TrustManager customTrustManager;
+//    private  Plugin plugin;
+//    private  final String PluginName = plugin.getName().toLowerCase();
 //    private WebSendService() {} // 防止实例化
 //
 //    /**
 //     * 初始化客户端（线程安全，延迟加载）
 //     */
-//    private static void ensureClientInitialized() {
+//    private  void ensureClientInitialized() {
 //        if (client == null) {
 //            synchronized (INIT_LOCK) {
 //                if (client == null) {
@@ -53,7 +53,7 @@
 //    /**
 //     * 初始化默认安全客户端
 //     */
-//    private static void initDefaultClient() throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException {
+//    private  void initDefaultClient() throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException {
 //        final TrustManager[] trustManagers;
 //        final SSLSocketFactory sslSocketFactory;
 //
@@ -98,7 +98,7 @@
 //    /**
 //     * 配置自定义SSL上下文（线程安全）
 //     */
-//    public static synchronized void configureSslContext(
+//    public  synchronized void configureSslContext(
 //            @Nullable SSLSocketFactory sslSocketFactory,
 //            @Nullable X509TrustManager trustManager) {
 //        customSslSocketFactory = sslSocketFactory;
@@ -109,7 +109,7 @@
 //    /**
 //     * 启用/禁用SSL证书验证（默认启用）
 //     */
-//    public static synchronized void setSslValidationEnabled(boolean enabled) {
+//    public  synchronized void setSslValidationEnabled(boolean enabled) {
 //        sslValidationEnabled = enabled;
 //        client = null; // 强制重新初始化
 //    }
@@ -119,7 +119,7 @@
 //     * @param url 示例：https://api.example.com/v1
 //     * @throws IllegalArgumentException 如果URL无效
 //     */
-//    public static synchronized void setBaseUrl(@NotNull String url) {
+//    public  synchronized void setBaseUrl(@NotNull String url) {
 //        HttpUrl parsed = HttpUrl.parse(url);
 //        if (parsed == null) {
 //            throw new IllegalArgumentException("Invalid URL: " + url);
@@ -129,26 +129,26 @@
 //                .build()
 //                .toString();
 //    }
-//    public static void plugin(Plugin plugin) {
+//    public  void plugin(Plugin plugin) {
 //        WebSendService.plugin =plugin;
 //    }
 //
 //    /**
 //     * 更新客户端配置（线程安全）
 //     */
-//    public static synchronized void configureClient(@NotNull OkHttpClient newClient) {
+//    public  synchronized void configureClient(@NotNull OkHttpClient newClient) {
 //        client = newClient;
 //    }
 //
 //    // 请求执行方法族
 //
-//    public static void post(@NotNull String path,
+//    public  void post(@NotNull String path,
 //                            @NotNull Map<String, String> params,
 //                            @NotNull HttpResponseCallback callback) {
 //        post(path, params, null, callback);
 //    }
 //
-//    public static void post(@NotNull String path,
+//    public  void post(@NotNull String path,
 //                            @NotNull Map<String, String> params,
 //                            @Nullable Map<String, String> headers,
 //                            @NotNull HttpResponseCallback callback) {
@@ -158,13 +158,13 @@
 //        );
 //    }
 //
-//    public static void postJson(@NotNull String path,
+//    public  void postJson(@NotNull String path,
 //                                @NotNull String json,
 //                                @NotNull HttpResponseCallback callback) {
 //        postJson(path, json, null, callback);
 //    }
 //
-//    public static void postJson(@NotNull String path,
+//    public  void postJson(@NotNull String path,
 //                                @NotNull String json,
 //                                @Nullable Map<String, String> headers,
 //                                @NotNull HttpResponseCallback callback) {
@@ -177,7 +177,7 @@
 //
 //    // 请求构建辅助方法
 //
-//    private static Request buildPostRequest(String path,
+//    private  Request buildPostRequest(String path,
 //                                            RequestBody body,
 //                                            @Nullable Map<String, String> headers) {
 //        Request.Builder builder = new Request.Builder()
@@ -187,7 +187,7 @@
 //        return builder.build();
 //    }
 //
-//    private static String resolveUrl(String path) {
+//    private  String resolveUrl(String path) {
 //        if (baseUrl == null) {
 //            throw new IllegalStateException("Base URL not configured");
 //        }
@@ -198,17 +198,17 @@
 //                .toString();
 //    }
 //
-//    private static FormBody buildFormBody(Map<String, String> params) {
+//    private  FormBody buildFormBody(Map<String, String> params) {
 //        FormBody.Builder builder = new FormBody.Builder();
 //        params.forEach(builder::add);
 //        return builder.build();
 //    }
 //
-//    private static RequestBody buildJsonBody(String json) {
+//    private  RequestBody buildJsonBody(String json) {
 //        return RequestBody.create(json, MediaType.get("application/json; charset=utf-8"));
 //    }
 //
-//    private static void applyHeaders(Request.Builder builder,
+//    private  void applyHeaders(Request.Builder builder,
 //                                     @Nullable Map<String, String> headers) {
 //        if (headers != null) {
 //            headers.forEach((k, v) -> {
@@ -221,7 +221,7 @@
 //
 //    // 请求执行
 //
-//    private static void executeRequest(Request request, HttpResponseCallback callback) {
+//    private  void executeRequest(Request request, HttpResponseCallback callback) {
 //        ensureClientInitialized();
 //        String URL = request.url().toString();
 //        plugin.getLogger().info("[executeRequest.Connection]"+plugin.getName()+"->"+ URL);
@@ -257,7 +257,7 @@
 //    }
 //
 //    // 不安全TrustManager生成（仅用于测试）
-//    private static TrustManager[] createInsecureTrustManagers() {
+//    private  TrustManager[] createInsecureTrustManagers() {
 //        return new TrustManager[]{
 //                new X509TrustManager() {
 //                    @Override
@@ -317,26 +317,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class WebSendService {
-    private static volatile CloseableHttpAsyncClient client;
-    private static volatile String baseUrl;
-    private static final Object INIT_LOCK = new Object();
+    private volatile CloseableHttpAsyncClient client;
+    private volatile String baseUrl;
+    private final Object INIT_LOCK = new Object();
 
     // 超时配置
-    private static final int DEFAULT_CONNECT_TIMEOUT = 10;
-    private static final int DEFAULT_RESPONSE_TIMEOUT = 20;
+    private final int DEFAULT_CONNECT_TIMEOUT = 10;
+    private final int DEFAULT_RESPONSE_TIMEOUT = 20;
 
     // SSL 配置
-    private static volatile boolean sslValidationEnabled = true;
-    private static volatile SSLContext customSslContext;
-    private static Plugin plugin;
+    private volatile boolean sslValidationEnabled = true;
+    private volatile SSLContext customSslContext;
+    private Plugin plugin;
 
-    private WebSendService() {}
-
-    public static void plugin(Plugin plugin) {
-        WebSendService.plugin = plugin;
+    public WebSendService(Plugin plugin) {
+        this.plugin = plugin;
     }
 
-    private static void ensureClientInitialized() {
+
+    private void ensureClientInitialized() {
         if (client == null) {
             synchronized (INIT_LOCK) {
                 if (client == null) {
@@ -350,7 +349,7 @@ public class WebSendService {
         }
     }
 
-    private static void initHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    private void initHttpClient() throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         final TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
                 .setSslContext(sslValidationEnabled ?
                         (customSslContext != null ? customSslContext : SSLContextBuilder.create().build()) :
@@ -375,17 +374,17 @@ public class WebSendService {
         client.start();
     }
 
-    public static synchronized void setSslValidationEnabled(boolean enabled) {
+    public synchronized void setSslValidationEnabled(boolean enabled) {
         sslValidationEnabled = enabled;
         resetClient();
     }
 
-    public static synchronized void configureSslContext(SSLContext sslContext) {
+    public synchronized void configureSslContext(SSLContext sslContext) {
         customSslContext = sslContext;
         resetClient();
     }
 
-    private static void resetClient() {
+    private void resetClient() {
         if (client != null) {
             try {
                 client.close();
@@ -396,40 +395,40 @@ public class WebSendService {
         }
     }
 
-    public static synchronized void setBaseUrl(@NotNull String url) {
+    public synchronized void setBaseUrl(@NotNull String url) {
         baseUrl = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 
     // 主要公共方法
-    public static void postJson(String path, String json, HttpResponseCallback callback) throws URISyntaxException {
+    public void postJson(String path, String json, HttpResponseCallback callback) throws URISyntaxException {
         postJson(path, json, null, callback);
     }
 
-    public static void postJson(String path, String json,
-                                @Nullable Map<String, String> headers,
-                                @NotNull HttpResponseCallback callback) throws URISyntaxException {
+    public void postJson(String path, String json,
+                         @Nullable Map<String, String> headers,
+                         @NotNull HttpResponseCallback callback) throws URISyntaxException {
         executeRequest(
                 buildJsonRequest(Method.POST, path, json, headers),
                 callback
         );
     }
 
-    private static SimpleHttpRequest buildJsonRequest(Method method, String path,
-                                                      String json, Map<String, String> headers) throws URISyntaxException {
+    private SimpleHttpRequest buildJsonRequest(Method method, String path,
+                                               String json, Map<String, String> headers) throws URISyntaxException {
         final SimpleHttpRequest request = new SimpleHttpRequest(method, new URI(resolveUrl(path)));
         request.setBody(json, ContentType.APPLICATION_JSON);
         addHeaders(request, headers);
         return request;
     }
 
-    private static String resolveUrl(String path) {
+    private String resolveUrl(String path) {
         if (baseUrl == null) {
             throw new IllegalStateException("Base URL not configured");
         }
         return baseUrl + (path.startsWith("/") ? path : "/" + path);
     }
 
-    private static void addHeaders(SimpleHttpRequest request, Map<String, String> headers) {
+    private void addHeaders(SimpleHttpRequest request, Map<String, String> headers) {
         if (headers != null) {
             headers.forEach((k, v) -> {
                 if (k != null && v != null) {
@@ -439,7 +438,7 @@ public class WebSendService {
         }
     }
 
-    private static void executeRequest(SimpleHttpRequest request, HttpResponseCallback callback) throws URISyntaxException {
+    private void executeRequest(SimpleHttpRequest request, HttpResponseCallback callback) throws URISyntaxException {
         ensureClientInitialized();
         final String url = request.getUri().toString();
 
@@ -462,17 +461,17 @@ public class WebSendService {
             }
         });
     }
-    private static void handleResponse(@Nullable SimpleHttpResponse response,
-                                       @Nullable Exception ex,
-                                       String url,
-                                       HttpResponseCallback callback) {
+
+    private void handleResponse(@Nullable SimpleHttpResponse response,
+                                @Nullable Exception ex,
+                                String url,
+                                HttpResponseCallback callback) {
         if (ex != null) {
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 plugin.getLogger().warning("[executeRequest.onFailure] " + plugin.getName() + "-X->" + url);
                 callback.onFailure(ex, null);
             });
-
 
 
             return;
@@ -504,7 +503,7 @@ public class WebSendService {
         void onFailure(@NotNull Throwable t, @Nullable HttpResponseWrapper response);
     }
 
-    public static class HttpResponseWrapper {
+    public class HttpResponseWrapper {
         private final SimpleHttpResponse response;
 
         public HttpResponseWrapper(SimpleHttpResponse response) {
