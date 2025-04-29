@@ -5,7 +5,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.bukkit.plugin.Plugin;
+
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
@@ -37,7 +37,7 @@ public class MultiJettyServer {
         private int idleTimeout = 30000;
         private int requestHeaderSize = 16384;
         private boolean showServerHeader = false;
-        private Plugin plugin = null;
+        private Logger logger = null;
         private boolean useLog = false;
         private boolean useSsl = false;
         private SSLManager.SSLConfig sslConfig = null;
@@ -61,8 +61,8 @@ public class MultiJettyServer {
             return this;
         }
 
-        public Config plugin(Plugin plugin) {
-            this.plugin = plugin;
+        public Config logger(Logger logger) {
+            this.logger = logger;
             return this;
         }
         public Config useLog(boolean useLog) {
@@ -84,12 +84,12 @@ public class MultiJettyServer {
     private final Config config;
     private static Server server;
     private final List<ApiEndpoint> endpoints = new ArrayList<>();
-    private Plugin plugin;
+    private final Logger logger;
     private final ExecutorService businessExecutor;
 
     public MultiJettyServer(Config config) {
         this.config = config;
-        this.plugin = Optional.ofNullable(config.plugin)
+        this.logger = Optional.ofNullable(config.logger)
                 .orElseThrow(() -> new IllegalArgumentException("Plugin must be configured in Config"));
         this.businessExecutor = Executors.newVirtualThreadPerTaskExecutor();
     }
@@ -234,13 +234,13 @@ public class MultiJettyServer {
                 try {
                     HttpServletRequest req = (HttpServletRequest) ctx.getRequest();
                     RequestData data = readRequest(req);
-                    plugin.getLogger().fine("Processing request: " + data);
+                    logger.fine("Processing request: " + data);
                     HttpServletResponse resp = (HttpServletResponse) ctx.getResponse();
-                    ResultData result = processor.process(data, plugin, new ResultData(resp));
+                    ResultData result = processor.process(data, new ResultData(resp));
                     result.apply();
                     setCorsHeaders(resp);
                 } catch (Exception e) {
-                    plugin.getLogger().warning("\nError processing request: " + Arrays.toString(e.getStackTrace()));
+                    logger.warning("\nError processing request: " + Arrays.toString(e.getStackTrace()));
                     sendError(ctx, 500, "Internal Server Error");
                 } finally {
                     ctx.complete();
@@ -374,7 +374,7 @@ public class MultiJettyServer {
     }
 
     public interface RequestProcessor {
-        ResultData process(RequestData data, Plugin plugin, ResultData result) throws Exception;
+        ResultData process(RequestData data, ResultData result) throws Exception;
     }
 
 }

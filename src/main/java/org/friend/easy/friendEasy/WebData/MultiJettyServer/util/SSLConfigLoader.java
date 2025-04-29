@@ -2,6 +2,7 @@ package org.friend.easy.friendEasy.WebData.MultiJettyServer.util;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.SSLConfigurator;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.SSLConfigTool.SSLManager;
 
 
