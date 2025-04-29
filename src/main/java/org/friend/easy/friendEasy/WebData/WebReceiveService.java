@@ -1,9 +1,10 @@
 package org.friend.easy.friendEasy.WebData;
 
-
 import org.bukkit.plugin.Plugin;
+
+
+import org.friend.easy.friendEasy.ReceiveDataProcessing.AchievementManager;
 import org.friend.easy.friendEasy.ReceiveDataProcessing.BanManager;
-import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.SSLConfigTool.SSLManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.JKSManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.MultiJettyServer;
@@ -16,6 +17,7 @@ import java.util.*;
 public class WebReceiveService {
     public MultiJettyServer server;
     public final Plugin plugin;
+
     public WebReceiveService(Plugin plugin) {
         this.plugin = plugin;
     }
@@ -43,43 +45,45 @@ public class WebReceiveService {
         }
         return jksManager.getFiles().get(0);
     }
-    public void startJettyServer(int MaxThread, int MinThreads, int Port, SSLManager.SSLConfig sslConfig) {
 
-        server =new MultiJettyServer(
-                    new MultiJettyServer.Config()
-                            .minThreads(MinThreads)
-                            .port(Port)
-                            .maxThreads(MaxThread)
-                            .plugin(plugin)
-                            .hideServerHeader()
-                            .useLog(false)
-                            .useSsl(true)
-                            .SSLConfig(sslConfig))
-                .addEndpoint("/api/banned", new BannedProcessor()).addEndpoint("/api/message", new MessageProcessor());
-            plugin.getLogger().info("Starting Jetty Server!");
+    public void startJettyServer(MultiJettyServer.Config config) {
+
+        server = new MultiJettyServer(config).addEndpoint("/api/banned", new BannedProcessor()).addEndpoint("/api/message", new MessageProcessor()).addEndpoint("/api/achievement", new AchievementProcessor());
+
+
+        plugin.getLogger().info("Starting Jetty Server!");
         try {
             server.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
+
     }
 
-    class BannedProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
 
+    class MessageProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
-        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, Plugin plugin, MultiJettyServer.ResultData result) throws Exception {
-            result.setBody(BanManager.BannedByJSON(data.body(), plugin));
+        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
+            result.setBody(MessageManager.SendMessageByJSON(data.body(), plugin));
             result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }
 
     }
-
-    class MessageProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
+    class AchievementProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
-        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, Plugin plugin, MultiJettyServer.ResultData result) throws Exception {
-            result.setBody(MessageManager.SendMessageByJSON(data.body(), plugin));
+        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
+            result.setBody(AchievementManager.GetAchievementsByJSON(data.body(), WebReceiveService.this.plugin));
+            result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
+            return result;
+        }
+
+    }
+    class BannedProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
+        @Override
+        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
+            result.setBody(BanManager.BannedByJSON(data.body(), plugin));
             result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }

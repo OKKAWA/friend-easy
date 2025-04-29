@@ -13,6 +13,7 @@ import java.io.File;
 import java.util.Objects;
 
 import org.friend.easy.friendEasy.OsCall.Beep;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.MultiJettyServer;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.SSLConfigTool.SSLManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.PortTool;
 
@@ -96,11 +97,15 @@ public class FriendEasy extends JavaPlugin {
             getLogger().warning("所有跟踪功能都已禁用！");
         }
         try {
-            webReceiveService.startJettyServer(5, 1,apiPort,
-                    SSLManager.create()
-                    .keystorePath(webReceiveService.getSSLFile().getAbsolutePath())
-                    .clientAuthMode(SSLManager.ClientAuthMode.NONE)
-                            .build());
+            webReceiveService.startJettyServer(new MultiJettyServer.Config()
+                    .minThreads(1)
+                    .port(apiPort)
+                    .maxThreads(5)
+                    .logger(getLogger())
+                    .hideServerHeader()
+                    .useLog(false)
+                    .useSsl(false)
+            );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
