@@ -6,6 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.friend.easy.friendEasy.Tracker.AchievementTracker;
 import org.friend.easy.friendEasy.Tracker.ChatMessageTracker;
 import org.friend.easy.friendEasy.Tracker.ServerInfoCollector;
+import org.friend.easy.friendEasy.Util.PluginManagement;
 import org.friend.easy.friendEasy.WebData.*;
 
 
@@ -29,11 +30,14 @@ public class FriendEasy extends JavaPlugin {
     public void onLoad() {
 
     }
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
+
         getLogger().info(
                 """
+                        \n
                         $$$$$$$$\\           $$\\                           $$\\ $$$$$$$$\\                              \s
                         $$  _____|          \\__|                          $$ |$$  _____|                             \s
                         $$ |       $$$$$$\\  $$\\  $$$$$$\\  $$$$$$$\\   $$$$$$$ |$$ |       $$$$$$\\   $$$$$$$\\ $$\\   $$\\\s
@@ -47,7 +51,7 @@ public class FriendEasy extends JavaPlugin {
                                                                                                              \\______/\s
                         FriendEasy----------------------------------------------------------------------------------------------
                         """);
-        if(false){
+        if (false) {
             Beep.Beep(this);
         }
         File configFile = new File(getDataFolder(), "config.yml");
@@ -71,6 +75,7 @@ public class FriendEasy extends JavaPlugin {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
+
         //配置
         webSendService.setBaseUrl(webhookUrl);
 
@@ -114,7 +119,17 @@ public class FriendEasy extends JavaPlugin {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        PluginManagement pluginManagement = new PluginManagement(webSendService,this);
+        //版本检查
+        new Thread(() -> {
+            if(pluginManagement.isLatest() == PluginManagement.isLatest.no || pluginManagement.isLatest() == PluginManagement.isLatest.error){
+                Bukkit.getScheduler().runTask(this,()->{
+                    this.getLogger().warning("Need Update,update download URL:" + pluginManagement.getUpDateURL());
+                });
+            }
+        }).start();
     }
+
 
     @Override
     public void onDisable() {

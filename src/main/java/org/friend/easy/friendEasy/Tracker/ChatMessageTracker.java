@@ -127,7 +127,7 @@ public class ChatMessageTracker implements Listener {
         try {
             webSendService.postJson("/api/ChatMessage", payload.toString(), new WebSendService.HttpResponseCallback() {
                 @Override
-                public void onSuccess(String body, WebSendService.@NotNull HttpResponseWrapper response) {
+                public void onSuccess(WebSendService.@NotNull HttpResponseWrapper response) {
                     plugin.getLogger().info(() -> "成功发送 " + messages.size() + " 条聊天消息");
                 }
 

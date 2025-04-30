@@ -314,6 +314,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class WebSendService {
@@ -412,7 +413,17 @@ public class WebSendService {
                 callback
         );
     }
-
+    public void getJson(String path, String json, HttpResponseCallback callback) throws URISyntaxException {
+        getJson(path, json, null, callback);
+    }
+    public void getJson(String path, String json,
+                         @Nullable Map<String, String> headers,
+                         @NotNull HttpResponseCallback callback) throws URISyntaxException {
+        executeRequest(
+                buildJsonRequest(Method.GET, path, json, headers),
+                callback
+        );
+    }
     private SimpleHttpRequest buildJsonRequest(Method method, String path,
                                                String json, Map<String, String> headers) throws URISyntaxException {
         final SimpleHttpRequest request = new SimpleHttpRequest(method, new URI(resolveUrl(path)));
@@ -443,7 +454,6 @@ public class WebSendService {
         final String url = request.getUri().toString();
 
         plugin.getLogger().info("[executeRequest.Connection] " + plugin.getName() + "->" + url);
-
         client.execute(request, new FutureCallback<SimpleHttpResponse>() {
             @Override
             public void completed(SimpleHttpResponse response) {
@@ -481,7 +491,7 @@ public class WebSendService {
             if (response.getCode() >= 200 && response.getCode() < 300) {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                             plugin.getLogger().info("[executeRequest.Success] " + plugin.getName() + "->" + url);
-                            callback.onSuccess(response.getBodyText(), new HttpResponseWrapper(response));
+                            callback.onSuccess(new HttpResponseWrapper(response));
                         }
                 );
 
@@ -498,7 +508,7 @@ public class WebSendService {
     }
 
     public interface HttpResponseCallback {
-        void onSuccess(@Nullable String responseBody, @NotNull HttpResponseWrapper response);
+        void onSuccess(@NotNull HttpResponseWrapper response);
 
         void onFailure(@NotNull Throwable t, @Nullable HttpResponseWrapper response);
     }
@@ -513,9 +523,52 @@ public class WebSendService {
         public int getCode() {
             return response.getCode();
         }
+        public String getBody(){
 
+            return response.getBodyText();
+        }
         public String getHeader(String name) throws ProtocolException {
             return response.getHeader(name).getValue();
         }
+    }
+    public HttpResponseWrapper postJson(@NotNull String path, @NotNull String json) throws URISyntaxException, ExecutionException, InterruptedException {
+        return postJson(path, json, (Map<String, String>) null);
+    }
+
+    public HttpResponseWrapper postJson(@NotNull String path, @NotNull String json,
+                                            @Nullable Map<String, String> headers) throws URISyntaxException, ExecutionException, InterruptedException {
+        SimpleHttpRequest request = buildJsonRequest(Method.POST, path, json, headers);
+        return executeRequestSync(request);
+    }
+
+    private HttpResponseWrapper executeRequestSync(SimpleHttpRequest request) throws URISyntaxException, ExecutionException, InterruptedException {
+        ensureClientInitialized();
+        final String url = request.getUri().toString();
+        plugin.getLogger().info("[executeRequestSync.Connection] " + plugin.getName() + "->" + url);
+
+        try {
+            Future<SimpleHttpResponse> future = client.execute(request, null);
+            SimpleHttpResponse response = future.get();
+            plugin.getLogger().info("[executeRequestSync.Success] " + plugin.getName() + "->" + url);
+            return new HttpResponseWrapper(response);
+        } catch (ExecutionException e) {
+            plugin.getLogger().warning("[executeRequestSync.Failure] " + plugin.getName() + "-X->" + url + " Error: " + e.getMessage());
+            throw new ExecutionException("Request failed: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            plugin.getLogger().warning("[executeRequestSync.Interrupted] " + plugin.getName() + "-X->" + url);
+            Thread.currentThread().interrupt(); // 重置中断状态
+            throw e;
+        }
+    }
+
+    // 添加GET同步方法
+    public HttpResponseWrapper getJsonSync(@NotNull String path) throws URISyntaxException, ExecutionException, InterruptedException {
+        return getJsonSync(path, null, null);
+    }
+
+    public HttpResponseWrapper getJsonSync(@NotNull String path, @Nullable String json,
+                                           @Nullable Map<String, String> headers) throws URISyntaxException, ExecutionException, InterruptedException {
+        SimpleHttpRequest request = buildJsonRequest(Method.GET, path, json != null ? json : "", headers);
+        return executeRequestSync(request);
     }
 }

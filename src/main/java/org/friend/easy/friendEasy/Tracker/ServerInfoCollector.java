@@ -200,7 +200,7 @@ public class ServerInfoCollector {
             webSendService.postJson("/api/ServerInfoCollector", payload.toString(),
                     new WebSendService.HttpResponseCallback() {
                         @Override
-                        public void onSuccess(String body, WebSendService.HttpResponseWrapper response) {
+                        public void onSuccess(WebSendService.HttpResponseWrapper response) {
                             handleSuccess(batch.size());
                         }
 

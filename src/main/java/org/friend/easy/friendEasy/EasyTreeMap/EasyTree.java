@@ -2,6 +2,8 @@ package org.friend.easy.friendEasy.EasyTreeMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.logging.Logger;
+
 public class EasyTree {
     public static class TreeNode<T> {
         private final T data;
@@ -66,24 +68,5 @@ public class EasyTree {
                     false);
         }
     }
-//    public static void main(String[] args) {
-//        TreeNode<String> root = new TreeNode<>("Root");
-//
-//        TreeNode<String> child1 = root.addChild("Child1");
-//        child1.addChild("Grandchild1");
-//        child1.addChild("Grandchild2");
-//
-//        TreeNode<String> child2 = root.addChild("Child2");
-//        child2.addChild("Grandchild3");
-//
-//        TreeNode<String> child3 = root.addChild("Child3");
-//
-//        // 使用默认toString格式打印
-//        System.out.println("Default format:");
-//        System.out.println(printTree(root));
-//
-//        // 自定义格式打印
-//        System.out.println("Custom format:");
-//        System.out.println(printTree(root, data -> "[" + data + "]"));
-//    }
+
 }
