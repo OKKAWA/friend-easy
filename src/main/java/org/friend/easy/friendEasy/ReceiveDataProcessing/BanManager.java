@@ -106,7 +106,7 @@ public class BanManager {
         }
     }
     private static void handlePlayerBan(String username, String reason, Date expiry, Plugin plugin) {
-        BanList nameBanList = Bukkit.getBanList(BanList.Type.NAME);
+        BanList nameBanList = Bukkit.getBanList(BanList.Type.PROFILE);
         nameBanList.addBan(username, reason, expiry, null);
 
         Player target = Bukkit.getPlayerExact(username);
