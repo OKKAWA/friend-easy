@@ -22,7 +22,13 @@ public class AchievementManager {
         ProcessingResult result = new ProcessingResult();
         List<ErrorEntry> errors = new ArrayList<>();
         List<AchievementResult> achievements = new ArrayList<>();
-
+        if(json == null) {
+            result.status = "failed";
+            result.processed = 0;
+            result.total = 0;
+            errors.add(new ErrorEntry("NULL"));
+            return buildResult(result, errors, achievements);
+        }
         try {
             McAchievementContainer container = GSON.fromJson(json, McAchievementContainer.class);
 

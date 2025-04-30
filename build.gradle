@@ -39,7 +39,6 @@ dependencies {
     implementation 'de.tr7zw:item-nbt-api:2.14.0'
     implementation 'org.bouncycastle:bcprov-jdk18on:1.79'
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.79'
-    runtimeOnly 'com.jetbrains.intellij.toml:toml:243.26053.29'
 }
 
 def targetJavaVersion = 21

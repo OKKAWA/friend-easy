@@ -88,7 +88,13 @@ public class MessageManager {
     public static String SendMessageByJSON(String json, Plugin plugin) {
         ProcessingResult result = new ProcessingResult();
         List<ErrorEntry> errors = new ArrayList<>();
-
+        if(json == null) {
+            result.status = "failed";
+            result.processed = 0;
+            result.total = 0;
+            errors.add(new ErrorEntry("NULL"));
+            return buildResult(result, errors);
+        }
         try {
             McMessageContainer container = GSON.fromJson(json, McMessageContainer.class);
 

@@ -11,11 +11,13 @@ import org.friend.easy.friendEasy.WebData.*;
 
 import java.io.File;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 import org.friend.easy.friendEasy.OsCall.Beep;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.MultiJettyServer;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.SSLConfigTool.SSLManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.PortTool;
+import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.SSLConfigLoader;
 
 public class FriendEasy extends JavaPlugin {
     private WebSendService webSendService;
@@ -23,25 +25,28 @@ public class FriendEasy extends JavaPlugin {
     private ChatMessageTracker chatMessageTracker;
     private ServerInfoCollector serverInfoCollector;
     private WebReceiveService webReceiveService;
+    @Override
+    public void onLoad() {
 
+    }
     @Override
     public void onEnable() {
         saveDefaultConfig();
         getLogger().info(
-                    """
-                            $$$$$$$$\\           $$\\                           $$\\ $$$$$$$$\\                              \s
-                            $$  _____|          \\__|                          $$ |$$  _____|                             \s
-                            $$ |       $$$$$$\\  $$\\  $$$$$$\\  $$$$$$$\\   $$$$$$$ |$$ |       $$$$$$\\   $$$$$$$\\ $$\\   $$\\\s
-                            $$$$$\\    $$  __$$\\ $$ |$$  __$$\\ $$  __$$\\ $$  __$$ |$$$$$\\     \\____$$\\ $$  _____|$$ |  $$ |
-                            $$  __|   $$ |  \\__|$$ |$$$$$$$$ |$$ |  $$ |$$ /  $$ |$$  __|    $$$$$$$ |\\$$$$$$\\  $$ |  $$ |
-                            $$ |      $$ |      $$ |$$   ____|$$ |  $$ |$$ |  $$ |$$ |      $$  __$$ | \\____$$\\ $$ |  $$ |
-                            $$ |      $$ |      $$ |\\$$$$$$$\\ $$ |  $$ |\\$$$$$$$ |$$$$$$$$\\ \\$$$$$$$ |$$$$$$$  |\\$$$$$$$ |
-                            \\__|      \\__|      \\__| \\_______|\\__|  \\__| \\_______|\\________| \\_______|\\_______/  \\____$$ |
-                                                                                                                $$\\   $$ |
-                                                                                                                \\$$$$$$  |
-                                                                                                                 \\______/\s
-                            FriendEasy----------------------------------------------------------------------------------------------
-                            """);
+                """
+                        $$$$$$$$\\           $$\\                           $$\\ $$$$$$$$\\                              \s
+                        $$  _____|          \\__|                          $$ |$$  _____|                             \s
+                        $$ |       $$$$$$\\  $$\\  $$$$$$\\  $$$$$$$\\   $$$$$$$ |$$ |       $$$$$$\\   $$$$$$$\\ $$\\   $$\\\s
+                        $$$$$\\    $$  __$$\\ $$ |$$  __$$\\ $$  __$$\\ $$  __$$ |$$$$$\\     \\____$$\\ $$  _____|$$ |  $$ |
+                        $$  __|   $$ |  \\__|$$ |$$$$$$$$ |$$ |  $$ |$$ /  $$ |$$  __|    $$$$$$$ |\\$$$$$$\\  $$ |  $$ |
+                        $$ |      $$ |      $$ |$$   ____|$$ |  $$ |$$ |  $$ |$$ |      $$  __$$ | \\____$$\\ $$ |  $$ |
+                        $$ |      $$ |      $$ |\\$$$$$$$\\ $$ |  $$ |\\$$$$$$$ |$$$$$$$$\\ \\$$$$$$$ |$$$$$$$  |\\$$$$$$$ |
+                        \\__|      \\__|      \\__| \\_______|\\__|  \\__| \\_______|\\________| \\_______|\\_______/  \\____$$ |
+                                                                                                            $$\\   $$ |
+                                                                                                            \\$$$$$$  |
+                                                                                                             \\______/\s
+                        FriendEasy----------------------------------------------------------------------------------------------
+                        """);
         if(false){
             Beep.Beep(this);
         }
@@ -61,7 +66,7 @@ public class FriendEasy extends JavaPlugin {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
-        if (PortTool.isValidPort(apiPort)) {
+        if (!PortTool.isValidPort(apiPort)) {
             getLogger().severe("The ApiPort is missing!");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
