@@ -15,7 +15,13 @@ public class CommandManager {
     public static String ExecuteCommandsByJSON(String json, Plugin plugin) {
         ProcessingResult result = new ProcessingResult();
         List<ErrorEntry> errors = new ArrayList<>();
-
+        if(json == null || json.isEmpty()) {
+            result.status = "failed";
+            result.processed = 0;
+            result.total = 0;
+            errors.add(new ErrorEntry("NULL"));
+            return buildResult(result, errors);
+        }
         try {
             McCommandContainer container = GSON.fromJson(json, McCommandContainer.class);
 

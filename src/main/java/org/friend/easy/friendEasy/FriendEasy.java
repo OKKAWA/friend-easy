@@ -124,7 +124,11 @@ public class FriendEasy extends JavaPlugin {
         new Thread(() -> {
             if(pluginManagement.isLatest() == PluginManagement.isLatest.no || pluginManagement.isLatest() == PluginManagement.isLatest.error){
                 Bukkit.getScheduler().runTask(this,()->{
-                    this.getLogger().warning("Need Update,update download URL:" + pluginManagement.getUpDateURL());
+                    this.getLogger().warning("Need Update,update download URL: " + pluginManagement.getUpDateURL());
+                });
+            }else{
+                Bukkit.getScheduler().runTask(this,()->{
+                    this.getLogger().warning("It's latest version!");
                 });
             }
         }).start();

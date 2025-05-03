@@ -10,11 +10,9 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class PluginManagement {
-    protected double VERSION;
+    protected String VERSION;
     protected String AUTHOR;
     private WebSendService webSendService;
     protected Plugin plugin;
@@ -43,25 +41,55 @@ public class PluginManagement {
     public isLatest isLatest() {
 
         try {
-            response = webSendService.postJson(getReposURL(), null);
-        } catch (URISyntaxException | InterruptedException | ExecutionException e) {
+            response = webSendService.getJson(getReposURL());
+
+            if (response == null) {
+                return isLatest.error;
+            }
+            if (response.getCode() != 200) {
+                return isLatest.error;
+            }
+            release = gson.fromJson(response.getBody(), GithubReposGsonClass.Release.class);
+            if (isLess(release.getTagName(), VERSION) || isEqual(release.getTagName(), VERSION)) {
+                return isLatest.yes;
+            } else {
+                return isLatest.no;
+            }
+        } catch (Exception e) {
             return isLatest.error;
-        }
-        if (response == null) {
-            return isLatest.error;
-        }
-        if (response.getCode() != 200) {
-            return isLatest.error;
-        }
-        release = gson.fromJson(response.getBody(), GithubReposGsonClass.Release.class);
-        if (Double.valueOf(release.getTagName()).equals(VERSION)) {
-            return isLatest.yes;
-        }else{
-            return isLatest.no;
         }
     }
 
+    public static int compareVersions(String version1, String version2) {
+        String[] v1Parts = version1.split("\\.");
+        String[] v2Parts = version2.split("\\.");
+        int maxLength = Math.max(v1Parts.length, v2Parts.length);
 
+        for (int i = 0; i < maxLength; i++) {
+            int num1 = (i < v1Parts.length) ? Integer.parseInt(v1Parts[i]) : 0;
+            int num2 = (i < v2Parts.length) ? Integer.parseInt(v2Parts[i]) : 0;
+
+            if (num1 != num2) {
+                return Integer.compare(num1, num2);
+            }
+        }
+        return 0;
+    }
+
+    // 判断 version1 > version2
+    public static boolean isGreater(String version1, String version2) {
+        return compareVersions(version1, version2) > 0;
+    }
+
+    // 判断 version1 < version2
+    public static boolean isLess(String version1, String version2) {
+        return compareVersions(version1, version2) < 0;
+    }
+
+    // 判断 version1 == version2
+    public static boolean isEqual(String version1, String version2) {
+        return compareVersions(version1, version2) == 0;
+    }
     private String getReposURL() {
         if (Information.GITHUBUPDATEURL == null) {
             return "https://api.github.com/repos/" + AUTHOR + "/" + Information.GITHUBREPONAME + "/releases/latest";

@@ -88,7 +88,7 @@ public class MessageManager {
     public static String SendMessageByJSON(String json, Plugin plugin) {
         ProcessingResult result = new ProcessingResult();
         List<ErrorEntry> errors = new ArrayList<>();
-        if(json == null) {
+        if(json == null || json.isEmpty()) {
             result.status = "failed";
             result.processed = 0;
             result.total = 0;

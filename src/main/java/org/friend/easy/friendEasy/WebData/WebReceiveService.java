@@ -3,8 +3,12 @@ package org.friend.easy.friendEasy.WebData;
 import org.bukkit.plugin.Plugin;
 
 
+import org.bukkit.plugin.java.JavaPlugin;
 import org.friend.easy.friendEasy.ReceiveDataProcessing.AchievementManager;
 import org.friend.easy.friendEasy.ReceiveDataProcessing.BanManager;
+import org.friend.easy.friendEasy.ReceiveDataProcessing.PluginManagementManager;
+import org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager.v1.SignPacketUtils;
+import org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager.v2.SignManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.JKSManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.MultiJettyServer;
@@ -48,7 +52,15 @@ public class WebReceiveService {
 
     public void startJettyServer(MultiJettyServer.Config config) {
 
-        server = new MultiJettyServer(config).addEndpoint("/api/banned", new BannedProcessor()).addEndpoint("/api/message", new MessageProcessor()).addEndpoint("/api/achievement", new AchievementProcessor());
+        server = new MultiJettyServer(config)
+                .addEndpoint("/api/banned", new BannedProcessor())
+                .addEndpoint("/api/message", new MessageProcessor())
+                .addEndpoint("/api/achievement", new AchievementProcessor())
+                .addEndpoint("/api/plugin",new PluginProcessor())
+                .addEndpoint("/api/v1/sign/set", new SignSetProcessor())
+                .addEndpoint("/api/v1/sign/get", new SignGetProcessor());
+
+
 
 
         plugin.getLogger().info("Starting Jetty Server!");
@@ -60,12 +72,37 @@ public class WebReceiveService {
 
 
     }
+    class SignGetProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
+        @Override
+        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
+            result.setBody(SignPacketUtils.getEditResult(data.body()));
+            result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
+            return result;
+        }
 
+    }
+    class SignSetProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
+        @Override
+        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
+            result.setBody(SignPacketUtils.processSignPacket(data.body(), plugin));
+            result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
+            return result;
+        }
 
+    }
     class MessageProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
         public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
             result.setBody(MessageManager.SendMessageByJSON(data.body(), plugin));
+            result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
+            return result;
+        }
+
+    }
+    class PluginProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
+        @Override
+        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
+            result.setBody(PluginManagementManager.handlePluginManagement(data.body(), (JavaPlugin) plugin));
             result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }

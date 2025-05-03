@@ -22,7 +22,7 @@ public class AchievementManager {
         ProcessingResult result = new ProcessingResult();
         List<ErrorEntry> errors = new ArrayList<>();
         List<AchievementResult> achievements = new ArrayList<>();
-        if(json == null) {
+        if(json == null || json.isEmpty()) {
             result.status = "failed";
             result.processed = 0;
             result.total = 0;
@@ -73,8 +73,6 @@ public class AchievementManager {
                         errors.add(e.getEntry());
                     }
 
-
-                    achievements.add(new AchievementResult(playerName, achievementList));
                     successCount++;
                 } catch (Exception e) {
                     errors.add(new ErrorEntry(playerName, e.getMessage()));
@@ -98,8 +96,13 @@ public class AchievementManager {
             result.total = 0;
             errors.add(new ErrorEntry("JSON syntax error: " + e.getMessage()));
         }
+        if(achievements.isEmpty()){
+            return buildResult(result, errors, null);
+        }else{
+            return buildResult(result, errors, achievements);
+        }
 
-        return buildResult(result, errors, achievements);
+
     }
 
     private static String buildResult(ProcessingResult result,

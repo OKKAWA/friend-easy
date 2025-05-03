@@ -92,29 +92,7 @@ public class GithubReposGsonClass {
         public String getBody() { return body; }
         public void setBody(String body) { this.body = body; }
 
-        @Override
-        public String toString() {
-            return "Release{" +
-                    "url='" + url + '\'' +
-                    ", assetsUrl='" + assetsUrl + '\'' +
-                    ", uploadUrl='" + uploadUrl + '\'' +
-                    ", htmlUrl='" + htmlUrl + '\'' +
-                    ", id=" + id +
-                    ", author=" + author +
-                    ", nodeId='" + nodeId + '\'' +
-                    ", tagName='" + tagName + '\'' +
-                    ", targetCommitish='" + targetCommitish + '\'' +
-                    ", name='" + name + '\'' +
-                    ", draft=" + draft +
-                    ", prerelease=" + prerelease +
-                    ", createdAt='" + createdAt + '\'' +
-                    ", publishedAt='" + publishedAt + '\'' +
-                    ", assets=" + assets +
-                    ", tarballUrl='" + tarballUrl + '\'' +
-                    ", zipballUrl='" + zipballUrl + '\'' +
-                    ", body='" + body + '\'' +
-                    '}';
-        }
+
     }
 
     class Author {
@@ -212,19 +190,7 @@ public class GithubReposGsonClass {
         public boolean isSiteAdmin() { return siteAdmin; }
         public void setSiteAdmin(boolean siteAdmin) { this.siteAdmin = siteAdmin; }
 
-        @Override
-        public String toString() {
-            return "Author{" +
-                    "login='" + login + '\'' +
-                    ", id=" + id +
-                    ", nodeId='" + nodeId + '\'' +
-                    ", avatarUrl='" + avatarUrl + '\'' +
-                    ", gravatarId='" + gravatarId + '\'' +
-                    ", url='" + url + '\'' +
-                    ", htmlUrl='" + htmlUrl + '\'' +
-                    // 其他字段...
-                    '}';
-        }
+
     }
 
     class Asset {
@@ -289,23 +255,5 @@ public class GithubReposGsonClass {
         public String getBrowserDownloadUrl() { return browserDownloadUrl; }
         public void setBrowserDownloadUrl(String browserDownloadUrl) { this.browserDownloadUrl = browserDownloadUrl; }
 
-        @Override
-        public String toString() {
-            return "Asset{" +
-                    "url='" + url + '\'' +
-                    ", id=" + id +
-                    ", nodeId='" + nodeId + '\'' +
-                    ", name='" + name + '\'' +
-                    ", label=" + label +
-                    ", uploader=" + uploader +
-                    ", contentType='" + contentType + '\'' +
-                    ", state='" + state + '\'' +
-                    ", size=" + size +
-                    ", downloadCount=" + downloadCount +
-                    ", createdAt='" + createdAt + '\'' +
-                    ", updatedAt='" + updatedAt + '\'' +
-                    ", browserDownloadUrl='" + browserDownloadUrl + '\'' +
-                    '}';
-        }
     }
 }

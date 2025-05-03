@@ -19,9 +19,7 @@ public class SignPacketUtils {
     private static final String PACKET_TYPE_GET_SIGN = "get_sign";
     private static final long SESSION_TIMEOUT_MS = 20000;
     private static final int POSITION_OFFSET_RANGE = 10;
-
-    // 使用ConcurrentHashMap和定时清理替代ExpiringMap
-    private static final ExpiringMap<UUID, EditSession> pendingEdits = new ExpiringMap<>(100000,20000);
+    private static final ExpiringMap<UUID, EditSession> pendingEdits = new ExpiringMap<>(SESSION_TIMEOUT_MS,20000);
     private static boolean listenerRegistered = false;
 
     // 响应状态常量
@@ -31,7 +29,7 @@ public class SignPacketUtils {
     private static final String STATUS_NOT_FOUND = "not_found";
     private static final String STATUS_EDITING = "still_editing";
     private static final String STATUS_COMPLETE = "edit_complete";
-    private void close(){
+    private static void close(){
         pendingEdits.shutdown();
     }
     public static String processSignPacket(String json, Plugin plugin) {

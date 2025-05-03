@@ -431,7 +431,13 @@ public class WebSendService {
         addHeaders(request, headers);
         return request;
     }
-
+    private SimpleHttpRequest buildJsonRequestNoResolveUrl(Method method, String path,
+                                               String json, Map<String, String> headers) throws URISyntaxException {
+        final SimpleHttpRequest request = new SimpleHttpRequest(method, new URI(path));
+        request.setBody(json, ContentType.APPLICATION_JSON);
+        addHeaders(request, headers);
+        return request;
+    }
     private String resolveUrl(String path) {
         if (baseUrl == null) {
             throw new IllegalStateException("Base URL not configured");
@@ -537,38 +543,38 @@ public class WebSendService {
 
     public HttpResponseWrapper postJson(@NotNull String path, @NotNull String json,
                                             @Nullable Map<String, String> headers) throws URISyntaxException, ExecutionException, InterruptedException {
-        SimpleHttpRequest request = buildJsonRequest(Method.POST, path, json, headers);
-        return executeRequestSync(request);
+        SimpleHttpRequest request = buildJsonRequestNoResolveUrl(Method.POST, path, json, headers);
+        return executeRequest(request);
     }
 
-    private HttpResponseWrapper executeRequestSync(SimpleHttpRequest request) throws URISyntaxException, ExecutionException, InterruptedException {
+    private HttpResponseWrapper executeRequest(SimpleHttpRequest request) throws URISyntaxException, ExecutionException, InterruptedException {
         ensureClientInitialized();
         final String url = request.getUri().toString();
-        plugin.getLogger().info("[executeRequestSync.Connection] " + plugin.getName() + "->" + url);
+        plugin.getLogger().info("[executeRequest.Connection] " + plugin.getName() + "->" + url);
 
         try {
             Future<SimpleHttpResponse> future = client.execute(request, null);
             SimpleHttpResponse response = future.get();
-            plugin.getLogger().info("[executeRequestSync.Success] " + plugin.getName() + "->" + url);
+            plugin.getLogger().info("[executeRequest.Success] " + plugin.getName() + "->" + url);
             return new HttpResponseWrapper(response);
         } catch (ExecutionException e) {
-            plugin.getLogger().warning("[executeRequestSync.Failure] " + plugin.getName() + "-X->" + url + " Error: " + e.getMessage());
+            plugin.getLogger().warning("[executeRequest.Failure] " + plugin.getName() + "-X->" + url + " Error: " + e.getMessage());
             throw new ExecutionException("Request failed: " + e.getMessage(), e);
         } catch (InterruptedException e) {
-            plugin.getLogger().warning("[executeRequestSync.Interrupted] " + plugin.getName() + "-X->" + url);
+            plugin.getLogger().warning("[executeRequest.Interrupted] " + plugin.getName() + "-X->" + url);
             Thread.currentThread().interrupt(); // 重置中断状态
             throw e;
         }
     }
 
     // 添加GET同步方法
-    public HttpResponseWrapper getJsonSync(@NotNull String path) throws URISyntaxException, ExecutionException, InterruptedException {
-        return getJsonSync(path, null, null);
+    public HttpResponseWrapper getJson(@NotNull String path) throws URISyntaxException, ExecutionException, InterruptedException {
+        return getJson(path, null, (Map<String, String>)null);
     }
 
-    public HttpResponseWrapper getJsonSync(@NotNull String path, @Nullable String json,
+    public HttpResponseWrapper getJson(@NotNull String path, @Nullable String json,
                                            @Nullable Map<String, String> headers) throws URISyntaxException, ExecutionException, InterruptedException {
-        SimpleHttpRequest request = buildJsonRequest(Method.GET, path, json != null ? json : "", headers);
-        return executeRequestSync(request);
+        SimpleHttpRequest request = buildJsonRequestNoResolveUrl(Method.GET, path, json != null ? json : "", headers);
+        return executeRequest(request);
     }
 }
