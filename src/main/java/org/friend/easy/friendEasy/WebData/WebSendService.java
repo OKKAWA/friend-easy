@@ -298,6 +298,7 @@ import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Method;
 import org.apache.hc.core5.http.ProtocolException;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
+import org.apache.hc.core5.io.CloseMode;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
 import org.apache.hc.core5.util.Timeout;
 import org.bukkit.Bukkit;
@@ -306,6 +307,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.net.ssl.SSLContext;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
@@ -536,6 +538,9 @@ public class WebSendService {
         public String getHeader(String name) throws ProtocolException {
             return response.getHeader(name).getValue();
         }
+        public void close(){
+            response.clear();
+        }
     }
     public HttpResponseWrapper postJson(@NotNull String path, @NotNull String json) throws URISyntaxException, ExecutionException, InterruptedException {
         return postJson(path, json, (Map<String, String>) null);
@@ -576,5 +581,9 @@ public class WebSendService {
                                            @Nullable Map<String, String> headers) throws URISyntaxException, ExecutionException, InterruptedException {
         SimpleHttpRequest request = buildJsonRequestNoResolveUrl(Method.GET, path, json != null ? json : "", headers);
         return executeRequest(request);
+    }
+    public void cancel() throws IOException {
+        client.close();
+
     }
 }

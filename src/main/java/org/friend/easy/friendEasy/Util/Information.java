@@ -1,7 +1,7 @@
 package org.friend.easy.friendEasy.Util;
 
 public interface Information {
-    String VERSION = "1.0";
+    String VERSION = "1.1";
 
     String AUTHOR = "OKKAWA";
     String AUTHORURL = "https://github.com/OKKAWA";

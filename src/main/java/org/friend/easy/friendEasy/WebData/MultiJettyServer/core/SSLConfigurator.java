@@ -1,5 +1,6 @@
 package org.friend.easy.friendEasy.WebData.MultiJettyServer.core;
 
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.SSLConfigTool.SSLManager;
 
@@ -8,7 +9,6 @@ public class SSLConfigurator {
     // 将 SSLConfig 转换为 Jetty 的 SslContextFactory
     public SslContextFactory.Server createSslContextFactory(SSLManager.SSLConfig config) {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
-
         // 基础密钥库配置
         configureKeyStore(sslContextFactory, config);
         // 信任库配置

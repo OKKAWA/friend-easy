@@ -13,9 +13,6 @@ public class SSLConfigLoader {
 
         // 获取 API Server 配置节点
         ConfigurationSection apiServer = config.getConfigurationSection("apiServer");
-        if (apiServer == null) {
-            throw new IllegalArgumentException();
-        }
 
         ConfigurationSection sslSection = apiServer.getConfigurationSection("ssl");
         if (sslSection == null) {

@@ -1,15 +1,16 @@
 apiServer:
   port: 8080
   ssl:
+    enabled: false
     keystore:
-      path: plugins/MyPlugin/certs/keystore.jks
-      password: mySecurePassword
+      path:
+      password:
       type: JKS
-      key-manager-password: keyPassword123
+      key-manager-password:
 
     truststore:
-      path: plugins/MyPlugin/certs/truststore.jks
-      password: truststorePass
+      path:
+      password:
       trust-all: false
 
     protocols:

@@ -1,5 +1,6 @@
 package org.friend.easy.friendEasy.WebData;
 
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
 
 
@@ -8,7 +9,6 @@ import org.friend.easy.friendEasy.ReceiveDataProcessing.AchievementManager;
 import org.friend.easy.friendEasy.ReceiveDataProcessing.BanManager;
 import org.friend.easy.friendEasy.ReceiveDataProcessing.PluginManagementManager;
 import org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager.v1.SignPacketUtils;
-import org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager.v2.SignManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.JKSManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.MultiJettyServer;

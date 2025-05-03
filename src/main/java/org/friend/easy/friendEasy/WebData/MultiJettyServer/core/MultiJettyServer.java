@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.bukkit.Warning;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
@@ -178,13 +179,19 @@ public class MultiJettyServer {
             HttpConfiguration httpConfig = new HttpConfiguration();
             httpConfig.setRequestHeaderSize(config.requestHeaderSize);
             httpConfig.setSendServerVersion(config.showServerHeader);
-
+            disableSNICheck(httpConfig);
             connector.addConnectionFactory(new HttpConnectionFactory(httpConfig));
             return connector;
         }
     }
-
-
+    //Warn!!!
+    //这是个test 用于本地
+    @Deprecated
+    private void disableSNICheck(HttpConfiguration httpsConfig){
+        SecureRequestCustomizer src = new SecureRequestCustomizer();
+        src.setSniHostCheck(false);
+        httpsConfig.addCustomizer(src);
+    }
     public void stop() throws Exception {
         if (server != null) {
             server.stop();

@@ -11,6 +11,7 @@ import org.friend.easy.friendEasy.WebData.*;
 
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -107,15 +108,19 @@ public class FriendEasy extends JavaPlugin {
             getLogger().warning("所有跟踪功能都已禁用！");
         }
         try {
-            webReceiveService.startJettyServer(new MultiJettyServer.Config()
+            MultiJettyServer.Config serverConfig =
+                    new MultiJettyServer.Config()
                     .minThreads(1)
                     .port(apiPort)
                     .maxThreads(5)
                     .logger(getLogger())
                     .hideServerHeader()
-                    .useLog(false)
-                    .useSsl(false)
-            );
+                    .useLog(false);
+            if (config.getBoolean("apiServer.ssl.enabled", false)) {
+                serverConfig.useSsl(true);
+                serverConfig.SSLConfig(SSLConfigLoader.loadConfig(config));
+            }
+            webReceiveService.startJettyServer(serverConfig);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -143,6 +148,7 @@ public class FriendEasy extends JavaPlugin {
         }
         getLogger().warning("chatMessageTracker is disabled");
         if (serverInfoCollector != null) {
+            serverInfoCollector.shutdownRetryTasks();
             serverInfoCollector.stopPlayerCollection();
             serverInfoCollector.disable();
         }
@@ -156,5 +162,11 @@ public class FriendEasy extends JavaPlugin {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        try {
+            webSendService.cancel();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

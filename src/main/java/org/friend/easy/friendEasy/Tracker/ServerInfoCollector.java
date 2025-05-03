@@ -219,18 +219,41 @@ public class ServerInfoCollector {
         retryCount.set(0);
         plugin.getLogger().info(() -> "成功发送 " + successCount + " 条服务器数据");
     }
+    private final List<BukkitTask> retryTasks = new CopyOnWriteArrayList<>();
 
     private void handleFailure(List<JsonObject> failedBatch, Throwable t) {
         plugin.getLogger().warning(() -> "数据发送失败: " + t.getMessage());
         if (retryCount.incrementAndGet() <= MAX_RETRIES) {
-            Bukkit.getScheduler().runTaskLaterAsynchronously(plugin,
+            long delay = retryCount.get() * 5L * 20L; // 指数退避
+            // 调度重试任务并记录
+            BukkitTask task = Bukkit.getScheduler().runTaskLaterAsynchronously(
+                    plugin,
                     () -> requeueData(failedBatch),
-                    retryCount.get() * 5L * 20L); // 指数退避
+                    delay
+            );
+            retryTasks.add(task);
+            plugin.getLogger().info("已安排第 " + retryCount.get() + " 次重试，延迟 " + delay + " ticks");
         } else {
             plugin.getLogger().severe("达到最大重试次数，丢弃 " + failedBatch.size() + " 条数据");
             dataQueue.removeAll(failedBatch);
             retryCount.set(0);
+            // 取消所有未完成的重试任务
+            cancelPendingRetryTasks();
         }
+    }
+
+    // 新增方法用于取消所有挂起的重试任务
+    private void cancelPendingRetryTasks() {
+        if (retryTasks.isEmpty()) {
+            return;
+        }
+        plugin.getLogger().info("取消所有未完成的重试任务，共 " + retryTasks.size() + " 个");
+        for (BukkitTask task : retryTasks) {
+            if (!task.isCancelled()) {
+                task.cancel();
+            }
+        }
+        retryTasks.clear();
     }
 
     private void requeueData(List<JsonObject> data) {
@@ -311,7 +334,9 @@ public class ServerInfoCollector {
             playerTask = null;
         }
     }
-
+    public void shutdownRetryTasks() {
+        cancelPendingRetryTasks();
+    }
     public void disable() {
         if (flushTask != null) {
             flushTask.cancel();
