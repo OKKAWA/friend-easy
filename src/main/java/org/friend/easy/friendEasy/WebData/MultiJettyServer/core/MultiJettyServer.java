@@ -76,6 +76,7 @@ public class MultiJettyServer {
         }
 
         public Config SSLConfig(SSLManager.SSLConfig ssLConfig) {
+
             this.sslConfig = ssLConfig;
             return this;
         }
@@ -127,7 +128,7 @@ public class MultiJettyServer {
         server.setConnectors(new Connector[]{connector});
         ServletContextHandler contextHandler = new ServletContextHandler();
         contextHandler.setContextPath("/");
-
+        contextHandler.setVirtualHosts(Arrays.asList("localhost"));
         for (ApiEndpoint endpoint : endpoints) {
             ServletHolder holder = new ServletHolder(new AsyncApiServlet(endpoint.processor()));
             holder.setAsyncSupported(true);
@@ -162,7 +163,7 @@ public class MultiJettyServer {
             httpsConfig.setRequestHeaderSize(config.requestHeaderSize);
             httpsConfig.setSendServerVersion(config.showServerHeader);
             httpsConfig.addCustomizer(new SecureRequestCustomizer());
-
+            httpsConfig.setSecureScheme("https");
             // 创建HTTPS连接器
             ServerConnector sslConnector = new ServerConnector(
                     server,

@@ -1,8 +1,11 @@
 package org.friend.easy.friendEasy.WebData.MultiJettyServer.core;
 
 import org.eclipse.jetty.server.SecureRequestCustomizer;
+import org.eclipse.jetty.util.ssl.SniX509ExtendedKeyManager;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.SSLConfigTool.SSLManager;
+
+import javax.net.ssl.SNIHostName;
 
 public class SSLConfigurator {
 
@@ -13,17 +16,15 @@ public class SSLConfigurator {
         configureKeyStore(sslContextFactory, config);
         // 信任库配置
         configureTrustStore(sslContextFactory, config);
-        // 协议与加密套件
         configureProtocols(sslContextFactory, config);
+        // 协议与加密套件
         // 客户端认证
         configureClientAuth(sslContextFactory, config);
         // 高级配置
         configureAdvanced(sslContextFactory, config);
-
         return sslContextFactory;
     }
     public SslContextFactory.Server setSslContextFactory(SSLManager.SSLConfig config,SslContextFactory.Server sslContextFactory) {
-
         // 基础密钥库配置
         configureKeyStore(sslContextFactory, config);
         // 信任库配置
@@ -119,7 +120,10 @@ public class SSLConfigurator {
         if (config.enableCRLDP) {
             sslContextFactory.setEnableCRLDP(config.enableCRLDP);
         }
-
+        if (config.disableSniRequired) {
+            sslContextFactory.setSniRequired(false);
+            sslContextFactory.setEndpointIdentificationAlgorithm(null);
+        }
         // 其他 Jetty 特有配置
         sslContextFactory.setRenegotiationAllowed(false);
         sslContextFactory.setUseCipherSuitesOrder(true);

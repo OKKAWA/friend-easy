@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class SSLManager {
     // Keystore 配置
@@ -37,7 +38,7 @@ public class SSLManager {
     private boolean enableCRLDP;
     private Integer sslSessionCacheSize;
     private Integer sslSessionTimeout;
-
+    private boolean disableSniRequired = false;
     private SSLManager() {}
 
     public static SSLManager create() {
@@ -144,6 +145,11 @@ public class SSLManager {
         this.sslSessionTimeout = timeout;
         return this;
     }
+    public SSLManager disableSniRequired(boolean disableSniRequired) {
+
+        this.disableSniRequired = disableSniRequired;
+        return this;
+    }
     // endregion
 
     public SSLConfig build() {
@@ -228,6 +234,7 @@ public class SSLManager {
         public final Integer sslSessionCacheSize;
         public final Integer sslSessionTimeout;
 
+        public final boolean disableSniRequired;
         private SSLConfig(SSLManager builder) {
             // Keystore 配置
             this.keystorePath = builder.keystorePath;
@@ -260,6 +267,7 @@ public class SSLManager {
             this.enableCRLDP = builder.enableCRLDP;
             this.sslSessionCacheSize = builder.sslSessionCacheSize;
             this.sslSessionTimeout = builder.sslSessionTimeout;
+            this.disableSniRequired = builder.disableSniRequired;
         }
     }
 }

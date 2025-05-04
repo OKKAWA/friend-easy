@@ -111,7 +111,7 @@ public class FriendEasy extends JavaPlugin {
             MultiJettyServer.Config serverConfig =
                     new MultiJettyServer.Config()
                     .minThreads(1)
-                    .port(apiPort)
+                    .port(443)
                     .maxThreads(5)
                     .logger(getLogger())
                     .hideServerHeader()

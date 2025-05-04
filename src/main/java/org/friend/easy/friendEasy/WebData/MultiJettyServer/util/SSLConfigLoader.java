@@ -13,7 +13,7 @@ public class SSLConfigLoader {
 
         // 获取 API Server 配置节点
         ConfigurationSection apiServer = config.getConfigurationSection("apiServer");
-
+        builder.disableSniRequired(true);
         ConfigurationSection sslSection = apiServer.getConfigurationSection("ssl");
         if (sslSection == null) {
             throw new IllegalArgumentException();
