@@ -21,7 +21,8 @@ public interface Information {
             "Welcome to Friend Easy",
             "It's our world!",
             "You're my dear friend！",
-            "OKKAWA 是我的github名称， AWA是我的本性");
+            "OKKAWA 是我的github名称， AWA是我的本性",
+            "我想有朋友");
 
 }
 
