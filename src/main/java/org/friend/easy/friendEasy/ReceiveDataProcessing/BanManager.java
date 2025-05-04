@@ -25,7 +25,7 @@ public class BanManager {
             result.status = "failed";
             result.processed = 0;
             result.total = 0;
-            errors.add(new ErrorEntry("NULL"));
+            errors.add(new ErrorEntry("Empty JSON input"));
             return buildResult(result, errors);
         }
         try {

@@ -24,7 +24,7 @@ public class PluginManagementManager {
             result.status = "failed";
             result.processed = 0;
             result.total = 0;
-            errors.add(new ErrorEntry("NULL"));
+            errors.add(new ErrorEntry("Empty JSON input"));
             return buildResult(result, errors);
         }
         try {
@@ -184,7 +184,6 @@ public class PluginManagementManager {
     // region 内部数据结构
     private class PluginOperationRequest {
         String type;
-        String sessionUUID;
         List<PluginOperation> operations;
     }
 
