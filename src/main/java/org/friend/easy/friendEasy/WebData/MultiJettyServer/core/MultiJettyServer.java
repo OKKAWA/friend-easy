@@ -128,7 +128,6 @@ public class MultiJettyServer {
         server.setConnectors(new Connector[]{connector});
         ServletContextHandler contextHandler = new ServletContextHandler();
         contextHandler.setContextPath("/");
-        contextHandler.setVirtualHosts(Arrays.asList("localhost"));
         for (ApiEndpoint endpoint : endpoints) {
             ServletHolder holder = new ServletHolder(new AsyncApiServlet(endpoint.processor()));
             holder.setAsyncSupported(true);
