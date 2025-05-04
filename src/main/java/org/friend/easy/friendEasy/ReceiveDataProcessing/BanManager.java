@@ -6,18 +6,22 @@ import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+
 import java.net.InetSocketAddress;
 import java.util.*;
 
 public class BanManager {
-    private static final Gson GSON = new Gson();
-    private static final String REQUEST_TYPE = "banned";
-    private static final String TIME_PATTERN = "^(\\d+)([dhms]?)$";
-
-    public static String BannedByJSON(String json, Plugin plugin) {
+    private final Gson GSON = new Gson();
+    private final String REQUEST_TYPE = "banned";
+    private final String TIME_PATTERN = "^(\\d+)([dhms]?)$";
+    private final Plugin plugin;
+    public BanManager(Plugin plugin) {
+        this.plugin = plugin;
+    }
+    public String BannedByJSON(String json) {
         ProcessingResult result = new ProcessingResult();
         List<ErrorEntry> errors = new ArrayList<>();
-        if(json == null || json.isEmpty()) {
+        if (json == null || json.isEmpty()) {
             result.status = "failed";
             result.processed = 0;
             result.total = 0;
@@ -74,7 +78,7 @@ public class BanManager {
         return buildResult(result, errors);
     }
 
-    private static void validateEntry(BanEntry entry) throws BanException {
+    private void validateEntry(BanEntry entry) throws BanException {
         if (entry.time == null || entry.time.isEmpty()) {
             throw new BanException("Missing required field: time");
         }
@@ -90,7 +94,7 @@ public class BanManager {
         }
     }
 
-    private static void processBanEntry(BanEntry entry, Plugin plugin) throws BanException {
+    private void processBanEntry(BanEntry entry, Plugin plugin) throws BanException {
         long duration = parseDuration(entry.time);
         Date expiry = duration > 0 ? new Date(System.currentTimeMillis() + duration) : null;
         String reason = entry.reason != null ? entry.reason : "No reason provided";
@@ -105,7 +109,8 @@ public class BanManager {
             throw new BanException("Invalid format: " + e.getMessage());
         }
     }
-    private static void handlePlayerBan(String username, String reason, Date expiry, Plugin plugin) {
+
+    private void handlePlayerBan(String username, String reason, Date expiry, Plugin plugin) {
         BanList nameBanList = Bukkit.getBanList(BanList.Type.PROFILE);
         nameBanList.addBan(username, reason, expiry, null);
 
@@ -115,7 +120,7 @@ public class BanManager {
         }
     }
 
-    private static void handleIPBan(String ipAddress, String reason, Date expiry, Plugin plugin) {
+    private void handleIPBan(String ipAddress, String reason, Date expiry, Plugin plugin) {
         if (!validateIP(ipAddress)) {
             throw new IllegalArgumentException("Invalid IP format: " + ipAddress);
         }
@@ -131,7 +136,7 @@ public class BanManager {
         }
     }
 
-    private static long parseDuration(String durationStr) throws BanException {
+    private long parseDuration(String durationStr) throws BanException {
         try {
             String cleanStr = durationStr.replaceAll("[^\\dA-Za-z]", "");
             if (!cleanStr.matches(TIME_PATTERN)) {
@@ -142,23 +147,28 @@ public class BanManager {
             String unit = cleanStr.replaceAll("[0-9]", "").toLowerCase();
 
             switch (unit) {
-                case "d": return value * 86_400_000L;
-                case "h": return value * 3_600_000L;
-                case "m": return value * 60_000L;
-                case "s": return value * 1_000L;
-                default: return value; // 默认毫秒
+                case "d":
+                    return value * 86_400_000L;
+                case "h":
+                    return value * 3_600_000L;
+                case "m":
+                    return value * 60_000L;
+                case "s":
+                    return value * 1_000L;
+                default:
+                    return value; // 默认毫秒
             }
         } catch (NumberFormatException e) {
             throw new BanException("Invalid numeric value: " + durationStr);
         }
     }
 
-    private static boolean validateIP(String ipAddress) {
+    private boolean validateIP(String ipAddress) {
         return ipAddress.matches("^([0-9]{1,3}\\.){3}[0-9]{1,3}$") ||
                 ipAddress.matches("^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$");
     }
 
-    private static String generateKickMessage(String reason, Date expiry) {
+    private String generateKickMessage(String reason, Date expiry) {
         return String.format(
                 "You have been banned!\nReason: %s\nExpires: %s",
                 reason,
@@ -166,25 +176,25 @@ public class BanManager {
         );
     }
 
-    private static String buildResult(ProcessingResult result, List<ErrorEntry> errors) {
+    private String buildResult(ProcessingResult result, List<ErrorEntry> errors) {
         result.errors = errors.isEmpty() ? null : errors;
         return GSON.toJson(result);
     }
 
     // 内部类定义
-    private static class BannedRequestContainer {
+    private class BannedRequestContainer {
         String type;
         List<BanEntry> list;
     }
 
-    private static class BanEntry {
+    private class BanEntry {
         String user;
         String ip;
         String time;
         String reason;
     }
 
-    private static class ProcessingResult {
+    private class ProcessingResult {
         String status;
         int processed;
         int total;
@@ -192,7 +202,7 @@ public class BanManager {
         List<ErrorEntry> errors;
     }
 
-    private static class ErrorEntry {
+    private class ErrorEntry {
         Map<String, Object> failed_entry;
         String error;
         String global_error;
@@ -211,7 +221,7 @@ public class BanManager {
         }
     }
 
-    private static class BanException extends RuntimeException {
+    private class BanException extends RuntimeException {
         BanException(String message) {
             super(message);
         }

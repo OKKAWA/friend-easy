@@ -7,6 +7,7 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.friend.easy.friendEasy.Util.FileRead;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -15,14 +16,16 @@ import java.io.FileReader;
 import java.util.*;
 
 public class AchievementManager {
-    static final Gson GSON = new Gson();
-    static Plugin plugin;
-    public static String GetAchievementsByJSON(String json, Plugin plugin) {
-        AchievementManager.plugin =plugin;
+    final Gson GSON = new Gson();
+    final Plugin plugin;
+    public AchievementManager(Plugin plugin) {
+        this.plugin = plugin;
+    }
+    public String GetAchievementsByJSON(String json) {
         ProcessingResult result = new ProcessingResult();
         List<ErrorEntry> errors = new ArrayList<>();
         List<AchievementResult> achievements = new ArrayList<>();
-        if(json == null || json.isEmpty()) {
+        if (json == null || json.isEmpty()) {
             result.status = "failed";
             result.processed = 0;
             result.total = 0;
@@ -54,7 +57,7 @@ public class AchievementManager {
             result.total = container.players.size();
             int successCount = 0;
             if (container.uuids != null && !container.uuids.isEmpty()) {
-                for (String uuid : container.uuids){
+                for (String uuid : container.uuids) {
                     container.players.add(String.valueOf(Bukkit.getOfflinePlayer(UUID.fromString(uuid))));
                 }
             }
@@ -68,8 +71,8 @@ public class AchievementManager {
                     List<String> achievementList = new ArrayList<>();
                     try {
                         achievementList = getAchievements(player);
-                    }catch (AchievementsException e) {
-                        plugin.getLogger().severe("Some things went wrong:\n"+e.getMessage());
+                    } catch (AchievementsException e) {
+                        plugin.getLogger().severe("Some things went wrong:\n" + e.getMessage());
                         errors.add(e.getEntry());
                     }
 
@@ -96,29 +99,30 @@ public class AchievementManager {
             result.total = 0;
             errors.add(new ErrorEntry("JSON syntax error: " + e.getMessage()));
         }
-        if(achievements.isEmpty()){
+        if (achievements.isEmpty()) {
             return buildResult(result, errors, null);
-        }else{
+        } else {
             return buildResult(result, errors, achievements);
         }
 
 
     }
 
-    private static String buildResult(ProcessingResult result,
-                                      List<ErrorEntry> errors,
-                                      List<AchievementResult> data) {
+    private String buildResult(ProcessingResult result,
+                               List<ErrorEntry> errors,
+                               List<AchievementResult> data) {
         result.errors = errors.isEmpty() ? null : errors;
         result.achievements = data.isEmpty() ? null : data;
         return GSON.toJson(result);
     }
-    private static class McAchievementContainer {
+
+    private class McAchievementContainer {
         String type;
         List<String> players;
         List<String> uuids;
     }
 
-    private static class ProcessingResult {
+    private class ProcessingResult {
         String status;
         int processed;
         int total;
@@ -127,7 +131,7 @@ public class AchievementManager {
         List<ErrorEntry> errors;
     }
 
-    private static class AchievementResult {
+    private class AchievementResult {
         String player;
         List<String> achievements;
 
@@ -137,7 +141,7 @@ public class AchievementManager {
         }
     }
 
-    private static class ErrorEntry {
+    private class ErrorEntry {
         Map<String, Object> failed_entry;
         String error;
         String global_error;
@@ -153,26 +157,28 @@ public class AchievementManager {
         }
     }
 
-    private static class ValidationException extends RuntimeException {
+    private class ValidationException extends RuntimeException {
         ValidationException(String message) {
             super(message);
         }
     }
 
-    private static class AchievementsException extends RuntimeException {
+    private class AchievementsException extends RuntimeException {
         final ErrorEntry entry;
+
         AchievementsException(ErrorEntry entry) {
             this.entry = entry;
         }
-        private ErrorEntry getEntry(){
+
+        private ErrorEntry getEntry() {
             return entry;
         }
     }
 
-    private static List<String> getAchievements(@NotNull Player player) {
+    private List<String> getAchievements(@NotNull Player player) {
         UUID uuid = player.getUniqueId();
         File advancementsDir = new File(Bukkit.getWorldContainer(), "/world/advancements");
-        File playerFile = new File(advancementsDir, uuid.toString() + ".json");
+        File playerFile = FileRead.readFile(new File(advancementsDir, uuid.toString() + ".json"));
         plugin.getLogger().warning("Loading achievements from " + playerFile.getAbsolutePath());
         List<String> advancementsList = new ArrayList<>();
         if (!playerFile.exists()) return advancementsList;
@@ -218,14 +224,14 @@ public class AchievementManager {
                 if (isDoneInFile != progress.isDone()) {
                     throw new AchievementsException(new ErrorEntry("Achievement statuses are inconsistent " + advancementId));
                 }
-                if(progress.getAdvancement().getDisplay() == null ) {
+                if (progress.getAdvancement().getDisplay() == null) {
                     continue;
                 }
                 advancementsList.add(progress.getAdvancement().getDisplay().getTitle());
             }
 
         } catch (Exception e) {
-            throw new AchievementsException(new ErrorEntry("Error:\n"+e.getMessage()));
+            throw new AchievementsException(new ErrorEntry("Error:\n" + e.getMessage()));
         }
         return advancementsList;
     }

@@ -2,7 +2,7 @@ name: friend-easy
 version: '1.0-SNAPSHOT'
 main: org.friend.easy.friendEasy.FriendEasy
 api-version: '1.21'
-softdepend:
+depend:
   - ProtocolLib
 libraries:
 #  -com.googlecode.json-simple:json-simple:1.1.1

@@ -13,9 +13,9 @@ import org.friend.easy.friendEasy.WebData.WebSendService;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ChatMessageTracker implements Listener {
 
@@ -56,12 +56,26 @@ public class ChatMessageTracker implements Listener {
         }
     }
 
+    // 配置常量
+    private static final int MAX_RETRIES = 3;
+    private static final int THREAD_POOL_SIZE = 2;
+
+    // 核心组件
     private final IncludeConfig config;
     private final JavaPlugin plugin;
     private final WebSendService webSendService;
     private final int messagePackageSize;
+
+    // 数据存储
     private final List<JsonObject> messageBuffer = Collections.synchronizedList(new ArrayList<>());
+
+    // 任务控制
     private final BukkitTask flushTask;
+
+    // 重试管理
+    private final AtomicInteger retryCount = new AtomicInteger(0);
+    private final ScheduledExecutorService retryExecutor = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
+    private final List<ScheduledFuture<?>> retryFutures = new CopyOnWriteArrayList<>();
 
     public ChatMessageTracker(IncludeConfig config, JavaPlugin plugin, WebSendService webSendService,
                               int messagePackageSize, int sendIntervalSeconds) {
@@ -70,7 +84,7 @@ public class ChatMessageTracker implements Listener {
         this.webSendService = webSendService;
         this.messagePackageSize = messagePackageSize;
 
-        // 定时任务立即启动并按固定间隔运行
+        // 初始化定时任务
         this.flushTask = Bukkit.getScheduler().runTaskTimer(
                 plugin,
                 this::flushMessages,
@@ -129,30 +143,79 @@ public class ChatMessageTracker implements Listener {
                 @Override
                 public void onSuccess(WebSendService.@NotNull HttpResponseWrapper response) {
                     plugin.getLogger().info(() -> "成功发送 " + messages.size() + " 条聊天消息");
+                    retryCount.set(0);
                 }
 
                 @Override
                 public void onFailure(@NotNull Throwable t, WebSendService.HttpResponseWrapper response) {
                     plugin.getLogger().warning(() -> "消息发送失败 (" + messages.size() + " 条): " + t.getMessage());
-                    requeueMessages(messages);
+                    handleSendFailure(messages);
                 }
             });
         } catch (URISyntaxException e) {
             plugin.getLogger().severe("无效的API地址: " + e.getMessage());
-            requeueMessages(messages);
+            handleSendFailure(messages);
         }
     }
 
-    private void requeueMessages(List<JsonObject> messages) {
-        synchronized (messageBuffer) {
-            messageBuffer.addAll(0, messages); // 重新插入到队列头部
+    private void handleSendFailure(List<JsonObject> failedMessages) {
+        if (retryCount.incrementAndGet() <= MAX_RETRIES) {
+            long delaySeconds = retryCount.get() * 5L; // 指数退避
+            scheduleRetry(failedMessages, delaySeconds);
+        } else {
+            handleMaxRetries(failedMessages);
         }
+    }
+
+    private void scheduleRetry(List<JsonObject> messages, long delaySeconds) {
+        ScheduledFuture<?> future = retryExecutor.schedule(
+                () -> requeueWithLock(messages),
+                delaySeconds,
+                TimeUnit.SECONDS
+        );
+        retryFutures.add(future);
+        plugin.getLogger().info("已安排第 " + retryCount.get() + " 次重试，延迟 " + delaySeconds + " 秒");
+    }
+
+    private synchronized void requeueWithLock(List<JsonObject> messages) {
+        messageBuffer.addAll(0, messages);
+        plugin.getLogger().info("重新排队 " + messages.size() + " 条消息");
+    }
+
+    private void handleMaxRetries(List<JsonObject> failedMessages) {
+        plugin.getLogger().severe("达到最大重试次数，丢弃 " + failedMessages.size() + " 条消息");
+        retryCount.set(0);
+        cancelPendingRetries();
+    }
+
+    private void cancelPendingRetries() {
+        retryFutures.removeIf(future -> {
+            boolean canceled = false;
+            if (!future.isDone() && !future.isCancelled()) {
+                canceled = future.cancel(false);
+            }
+            return canceled;
+        });
     }
 
     public void disable() {
+        // 停止定时任务
         if (flushTask != null) {
             flushTask.cancel();
         }
-        flushMessages(); // 关闭前发送剩余消息
+
+        // 发送剩余消息
+        flushMessages();
+
+        // 关闭线程池
+        retryExecutor.shutdown();
+        try {
+            if (!retryExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+                plugin.getLogger().warning("强制终止剩余重试任务: " + retryExecutor.shutdownNow().size());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            plugin.getLogger().warning("线程池关闭被中断");
+        }
     }
 }

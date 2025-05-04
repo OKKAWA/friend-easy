@@ -5,17 +5,18 @@ import com.google.gson.JsonSyntaxException;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+
 import java.util.*;
 import java.util.regex.Pattern;
 
 public class CommandManager {
-    static final Gson GSON = new Gson();
-    private static final Pattern COMMAND_PATTERN = Pattern.compile("^/[a-zA-Z0-9_]+");
+    final Gson GSON = new Gson();
+    private final Pattern COMMAND_PATTERN = Pattern.compile("^/[a-zA-Z0-9_]+");
 
-    public static String ExecuteCommandsByJSON(String json, Plugin plugin) {
+    public String ExecuteCommandsByJSON(String json, Plugin plugin) {
         ProcessingResult result = new ProcessingResult();
         List<ErrorEntry> errors = new ArrayList<>();
-        if(json == null || json.isEmpty()) {
+        if (json == null || json.isEmpty()) {
             result.status = "failed";
             result.processed = 0;
             result.total = 0;
@@ -86,7 +87,7 @@ public class CommandManager {
         return buildResult(result, errors);
     }
 
-    private static void validateCommandEntry(CommandEntry entry) throws ValidationException {
+    private void validateCommandEntry(CommandEntry entry) throws ValidationException {
         if (entry.command == null || entry.command.isEmpty()) {
             throw new ValidationException("Empty command");
         }
@@ -102,7 +103,7 @@ public class CommandManager {
         }
     }
 
-    private static void executeCommand(CommandEntry entry) {
+    private void executeCommand(CommandEntry entry) {
         String processedCommand = processPlaceholders(entry.command);
 
         if ("console".equals(entry.executor)) {
@@ -116,7 +117,7 @@ public class CommandManager {
         }
     }
 
-    private static String processPlaceholders(String command) {
+    private String processPlaceholders(String command) {
         // 处理占位符（示例：{player} -> 随机玩家）
         if (command.contains("{player}")) {
             List<Player> onlinePlayers = new ArrayList<>(Bukkit.getOnlinePlayers());
@@ -128,24 +129,24 @@ public class CommandManager {
         return command;
     }
 
-    private static String buildResult(ProcessingResult result, List<ErrorEntry> errors) {
+    private String buildResult(ProcessingResult result, List<ErrorEntry> errors) {
         result.errors = errors.isEmpty() ? null : errors;
         return GSON.toJson(result);
     }
 
     // 内部数据结构
-    private static class McCommandContainer {
+    private class McCommandContainer {
         String type;
         List<CommandEntry> commands;
     }
 
-    private static class CommandEntry {
+    private class CommandEntry {
         String command;
         String executor = "console"; // 默认控制台执行
         int delay = 0; // 单位：秒
     }
 
-    private static class ProcessingResult {
+    private class ProcessingResult {
         String status;
         int processed;
         int total;
@@ -153,7 +154,7 @@ public class CommandManager {
         List<ErrorEntry> errors;
     }
 
-    private static class ErrorEntry {
+    private class ErrorEntry {
         Map<String, Object> failed_entry;
         String error;
         String global_error;
@@ -171,7 +172,7 @@ public class CommandManager {
         }
     }
 
-    private static class ValidationException extends RuntimeException {
+    private class ValidationException extends RuntimeException {
         ValidationException(String message) {
             super(message);
         }

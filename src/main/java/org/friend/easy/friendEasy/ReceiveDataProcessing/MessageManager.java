@@ -1,4 +1,5 @@
 package org.friend.easy.friendEasy.ReceiveDataProcessing;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -6,6 +7,7 @@ import net.md_5.bungee.chat.ComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+
 import java.util.*;
 
 /*
@@ -83,12 +85,15 @@ JSON示例：{
 
  */
 public class MessageManager {
-    static final Gson GSON = new Gson();
-
-    public static String SendMessageByJSON(String json, Plugin plugin) {
+    final Gson GSON = new Gson();
+    final Plugin plugin;
+    public MessageManager(Plugin plugin) {
+        this.plugin = plugin;
+    }
+    public String SendMessageByJSON(String json) {
         ProcessingResult result = new ProcessingResult();
         List<ErrorEntry> errors = new ArrayList<>();
-        if(json == null || json.isEmpty()) {
+        if (json == null || json.isEmpty()) {
             result.status = "failed";
             result.processed = 0;
             result.total = 0;
@@ -168,30 +173,31 @@ public class MessageManager {
         return buildResult(result, errors);
     }
 
-    private static String buildResult(ProcessingResult result, List<ErrorEntry> errors) {
+    private String buildResult(ProcessingResult result, List<ErrorEntry> errors) {
         result.errors = errors.isEmpty() ? null : errors;
         return GSON.toJson(result);
     }
 
-    private static class McMessageContainer {
+    private class McMessageContainer {
         String type;
         List<MessageEntry> message;
     }
 
-    private static class MessageEntry {
+    private class MessageEntry {
         Long timestamp;
         String select;
         String message;
     }
 
-    private static class ProcessingResult {
+    private class ProcessingResult {
         String status;
         int processed;
         int total;
         double success_rate;
         List<ErrorEntry> errors;
     }
-    private static class ErrorEntry {
+
+    private class ErrorEntry {
         Map<String, Object> failed_entry;
         String error;
         String global_error;
@@ -208,7 +214,8 @@ public class MessageManager {
             this.error = error;
         }
     }
-    private static class ValidationException extends RuntimeException {
+
+    private class ValidationException extends RuntimeException {
         ValidationException(String message) {
             super(message);
         }

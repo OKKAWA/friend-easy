@@ -1,6 +1,7 @@
 package org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager;
 
 import org.bukkit.plugin.Plugin;
+import org.friend.easy.friendEasy.Util.FileRead;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -29,11 +30,12 @@ public class JKSManager {
      * @return 包含所有JKS文件的JKSManager实例
      */
     public static JKSManager getJKS(Plugin plugin, String child) {
-        File targetDir = new File(plugin.getDataFolder(), child);
+        File targetDir = FileRead.readFile(new File(plugin.getDataFolder(), child));
         List<File> allFiles = listAllFile(targetDir);
         List<File> jksFiles = new ArrayList<>();
         LOGGER = plugin.getLogger();
         for (File file : allFiles) {
+            FileRead.readFile(file);
             if (file.getName().toLowerCase().endsWith(".jks")) {
                 jksFiles.add(file);
             }
@@ -73,7 +75,7 @@ public class JKSManager {
         for (File file : files) {
             try {
                 if (!file.exists()) continue;
-
+                FileRead.readFile(file);
                 if (file.isDirectory()) {
                     fileList.addAll(listAllFile(file)); // 递归处理子目录
                 } else if (isFileAccessible(file)) {
@@ -93,6 +95,7 @@ public class JKSManager {
      * @return 目录是否存在（创建成功或已存在）
      */
     private static boolean ensureDirectoryExists(File dir) {
+        FileRead.readFile(dir);
         if (dir.exists()) {
             if (!dir.isDirectory()) {
                 LOGGER.warning("Path exists but is not a directory: " + dir);
@@ -112,6 +115,7 @@ public class JKSManager {
      * 检查文件是否可读且可写。
      */
     private static boolean isFileAccessible(File file) {
+        FileRead.readFile(file);
         return file.canRead() && file.canWrite();
     }
 
@@ -128,11 +132,12 @@ public class JKSManager {
      * 添加对多个扩展名的支持
      */
     public static JKSManager getFilesByExtensions(Plugin plugin, String child, String... extensions) {
-        File targetDir = new File(plugin.getDataFolder(), child);
+        File targetDir = FileRead.readFile(new File(plugin.getDataFolder(), child));
         List<File> allFiles = listAllFile(targetDir);
         List<File> filteredFiles = new ArrayList<>();
 
         for (File file : allFiles) {
+            FileRead.readFile(file);
             for (String ext : extensions) {
                 if (file.getName().toLowerCase().endsWith(ext.toLowerCase())) {
                     filteredFiles.add(file);

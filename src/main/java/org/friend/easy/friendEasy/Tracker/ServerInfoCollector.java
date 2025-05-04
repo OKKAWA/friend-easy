@@ -9,26 +9,36 @@ import org.bukkit.scheduler.BukkitTask;
 import org.friend.easy.friendEasy.WebData.WebSendService;
 
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerInfoCollector {
+    // 配置常量
     private static final int MAX_RETRIES = 3;
     private static final int BATCH_SIZE = 20;
-    private static final int FLUSH_INTERVAL = 30; // seconds
+    private static final int FLUSH_INTERVAL = 30; // 秒
+    private static final int THREAD_POOL_SIZE = 2;
 
+    // 核心组件
     private final WebSendService webSendService;
     private final JavaPlugin plugin;
     private final ServerConfig serverConfig;
     private final PlayerConfig playerConfig;
+
+    // 数据存储
     private final List<JsonObject> dataQueue = new CopyOnWriteArrayList<>();
+
+    // 任务控制
     private BukkitTask flushTask;
     private BukkitTask playerTask;
-    private final AtomicInteger retryCount = new AtomicInteger(0);
 
-    // 配置类使用建造者模式
+    // 重试管理
+    private final AtomicInteger retryCount = new AtomicInteger(0);
+    private final ScheduledExecutorService retryExecutor;
+    private final List<ScheduledFuture<?>> retryFutures = new CopyOnWriteArrayList<>();
+
+    // 服务器配置（建造者模式）
     public static class ServerConfig {
         public final boolean timestamp;
         public final boolean version;
@@ -74,6 +84,7 @@ public class ServerInfoCollector {
         }
     }
 
+    // 玩家配置（建造者模式）
     public static class PlayerConfig {
         public final boolean timestamp;
         public final boolean uuid;
@@ -149,11 +160,12 @@ public class ServerInfoCollector {
         this.playerConfig = playerConfig;
         this.webSendService = webSendService;
         this.plugin = plugin;
+        this.retryExecutor = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
         initScheduler();
     }
 
+    // 初始化定时任务
     private void initScheduler() {
-        // 数据刷新任务
         this.flushTask = Bukkit.getScheduler().runTaskTimerAsynchronously(
                 plugin,
                 this::flushData,
@@ -162,33 +174,7 @@ public class ServerInfoCollector {
         );
     }
 
-    public void sendInitialServerInfo() {
-        JsonObject serverInfo = buildServerInfo();
-        queueData(serverInfo);
-    }
-
-    public void startPlayerCollection(int intervalSeconds) {
-        stopPlayerCollection();
-        this.playerTask = Bukkit.getScheduler().runTaskTimerAsynchronously(
-                plugin,
-                this::collectPlayerData,
-                intervalSeconds * 20L,
-                intervalSeconds * 20L
-        );
-    }
-
-    private void collectPlayerData() {
-        JsonObject playerData = buildPlayerData();
-        queueData(playerData);
-    }
-
-    private void queueData(JsonObject data) {
-        dataQueue.add(data);
-        if (dataQueue.size() >= BATCH_SIZE) {
-            flushData();
-        }
-    }
-
+    // 核心数据发送逻辑
     private synchronized void flushData() {
         if (dataQueue.isEmpty()) return;
 
@@ -211,55 +197,87 @@ public class ServerInfoCollector {
                     });
             batch.clear();
         } catch (URISyntaxException e) {
-            plugin.getLogger().severe("Invalid API endpoint: " + e.getMessage());
+            plugin.getLogger().severe("API endpoint format error: " + e.getMessage());
         }
     }
 
-    private void handleSuccess(int successCount) {
-        retryCount.set(0);
-        plugin.getLogger().info(() -> "成功发送 " + successCount + " 条服务器数据");
-    }
-    private final List<BukkitTask> retryTasks = new CopyOnWriteArrayList<>();
-
+    // 处理发送失败
     private void handleFailure(List<JsonObject> failedBatch, Throwable t) {
-        plugin.getLogger().warning(() -> "数据发送失败: " + t.getMessage());
+        plugin.getLogger().warning("Data Sending Failure: " + t.getMessage());
+
         if (retryCount.incrementAndGet() <= MAX_RETRIES) {
-            long delay = retryCount.get() * 5L * 20L; // 指数退避
-            // 调度重试任务并记录
-            BukkitTask task = Bukkit.getScheduler().runTaskLaterAsynchronously(
-                    plugin,
-                    () -> requeueData(failedBatch),
-                    delay
-            );
-            retryTasks.add(task);
-            plugin.getLogger().info("已安排第 " + retryCount.get() + " 次重试，延迟 " + delay + " ticks");
+            long delay = retryCount.get() * 5L; // 指数退避
+            scheduleRetry(failedBatch, delay);
         } else {
-            plugin.getLogger().severe("达到最大重试次数，丢弃 " + failedBatch.size() + " 条数据");
-            dataQueue.removeAll(failedBatch);
-            retryCount.set(0);
-            // 取消所有未完成的重试任务
-            cancelPendingRetryTasks();
+            handleMaxRetriesReached(failedBatch);
         }
     }
 
-    // 新增方法用于取消所有挂起的重试任务
-    private void cancelPendingRetryTasks() {
-        if (retryTasks.isEmpty()) {
-            return;
-        }
-        plugin.getLogger().info("取消所有未完成的重试任务，共 " + retryTasks.size() + " 个");
-        for (BukkitTask task : retryTasks) {
-            if (!task.isCancelled()) {
-                task.cancel();
+    // 调度重试任务
+    private void scheduleRetry(List<JsonObject> batch, long delaySeconds) {
+        ScheduledFuture<?> future = retryExecutor.schedule(
+                () -> requeueData(batch),
+                delaySeconds,
+                TimeUnit.SECONDS
+        );
+        retryFutures.add(future);
+        plugin.getLogger().info("Scheduled " + retryCount.get() + " retries, delayed " + delaySeconds + " second");
+    }
+
+    // 重试次数达到上限处理
+    private void handleMaxRetriesReached(List<JsonObject> failedBatch) {
+        plugin.getLogger().severe("The maximum number of retries is reached, and it is discarded " + failedBatch.size() + " data");
+        dataQueue.removeAll(failedBatch);
+        retryCount.set(0);
+        cancelPendingRetries();
+    }
+
+    // 取消所有挂起的重试
+    private void cancelPendingRetries() {
+        retryFutures.removeIf(future -> {
+            boolean success = true;
+            if (!future.isDone()) {
+                success = future.cancel(false);
             }
-        }
-        retryTasks.clear();
+            return success;
+        });
     }
 
+    // 重新排队数据
     private void requeueData(List<JsonObject> data) {
         dataQueue.addAll(0, data);
+        plugin.getLogger().info("Requeued " + data.size() + " data");
     }
 
+    // 处理发送成功
+    private void handleSuccess(int successCount) {
+        retryCount.set(0);
+        plugin.getLogger().info("Successfully sent " + successCount + " data");
+        cancelPendingRetries();
+    }
+
+    // 玩家数据收集
+    public void startPlayerCollection(int intervalSeconds) {
+        stopPlayerCollection();
+        this.playerTask = Bukkit.getScheduler().runTaskTimerAsynchronously(
+                plugin,
+                this::collectPlayerData,
+                intervalSeconds * 20L,
+                intervalSeconds * 20L
+        );
+    }
+
+    private void collectPlayerData() {
+        JsonObject data = buildPlayerData();
+        synchronized (this) {
+            dataQueue.add(data);
+            if (dataQueue.size() >= BATCH_SIZE) {
+                flushData();
+            }
+        }
+    }
+
+    // 构建服务器信息
     private JsonObject buildServerInfo() {
         JsonObject json = new JsonObject();
         json.addProperty("type", "server_info");
@@ -280,6 +298,7 @@ public class ServerInfoCollector {
         return json;
     }
 
+    // 构建玩家数据
     private JsonObject buildPlayerData() {
         JsonObject json = new JsonObject();
         json.addProperty("type", "player_stats");
@@ -292,12 +311,14 @@ public class ServerInfoCollector {
         }
 
         JsonArray players = new JsonArray();
-        Bukkit.getOnlinePlayers().forEach(player -> players.add(buildPlayerInfo(player)));
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            players.add(buildPlayerInfo(player));
+        }
         json.add("players", players);
-
         return json;
     }
 
+    // 构建单个玩家信息
     private JsonObject buildPlayerInfo(Player player) {
         JsonObject json = new JsonObject();
         json.addProperty("name", player.getName());
@@ -320,6 +341,7 @@ public class ServerInfoCollector {
         return json;
     }
 
+    // 获取玩家IP
     private String getPlayerIP(Player player) {
         try {
             return player.getAddress().getAddress().getHostAddress();
@@ -328,19 +350,40 @@ public class ServerInfoCollector {
         }
     }
 
+    // 停止玩家数据收集
     public void stopPlayerCollection() {
         if (playerTask != null) {
             playerTask.cancel();
             playerTask = null;
         }
     }
-    public void shutdownRetryTasks() {
-        cancelPendingRetryTasks();
-    }
+
+    // 关闭资源
     public void disable() {
+        // 停止所有Bukkit任务
         if (flushTask != null) {
             flushTask.cancel();
             flushData();
+        }
+        stopPlayerCollection();
+
+        // 关闭线程池
+        retryExecutor.shutdown();
+        try {
+            if (!retryExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+                plugin.getLogger().warning("The retry thread pool is not completely terminated, and the remaining tasks: " + retryExecutor.shutdownNow().size());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            plugin.getLogger().warning("The thread pool shutdown process is interrupted, and the thread pool shutdown process is interrupted");
+        }
+    }
+
+    // 初始化服务器信息
+    public void sendInitialServerInfo() {
+        JsonObject info = buildServerInfo();
+        synchronized (this) {
+            dataQueue.add(info);
         }
     }
 }

@@ -6,6 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.friend.easy.friendEasy.Tracker.AchievementTracker;
 import org.friend.easy.friendEasy.Tracker.ChatMessageTracker;
 import org.friend.easy.friendEasy.Tracker.ServerInfoCollector;
+import org.friend.easy.friendEasy.Util.FileRead;
 import org.friend.easy.friendEasy.Util.PluginManagement;
 import org.friend.easy.friendEasy.WebData.*;
 
@@ -55,7 +56,8 @@ public class FriendEasy extends JavaPlugin {
         if (false) {
             Beep.Beep(this);
         }
-        File configFile = new File(getDataFolder(), "config.yml");
+        FileRead.setLogger(getLogger());
+        File configFile = FileRead.readFile(new File(getDataFolder(), "config.yml"));
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
         String webhookUrl = config.getString("webhook.url");
@@ -148,7 +150,6 @@ public class FriendEasy extends JavaPlugin {
         }
         getLogger().warning("chatMessageTracker is disabled");
         if (serverInfoCollector != null) {
-            serverInfoCollector.shutdownRetryTasks();
             serverInfoCollector.stopPlayerCollection();
             serverInfoCollector.disable();
         }

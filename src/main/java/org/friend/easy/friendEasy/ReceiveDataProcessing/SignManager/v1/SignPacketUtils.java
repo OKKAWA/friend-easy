@@ -13,26 +13,31 @@ import java.util.*;
 
 public class SignPacketUtils {
     // 常量定义
-    private static final Gson GSON = new Gson();
-    private static final int MAX_LINES = 4;
-    private static final String PACKET_TYPE_SIGN = "sign_packet";
-    private static final String PACKET_TYPE_GET_SIGN = "get_sign";
-    private static final long SESSION_TIMEOUT_MS = 20000;
-    private static final int POSITION_OFFSET_RANGE = 10;
-    private static final ExpiringMap<UUID, EditSession> pendingEdits = new ExpiringMap<>(SESSION_TIMEOUT_MS,20000);
-    private static boolean listenerRegistered = false;
+    private final Gson GSON = new Gson();
+    private final int MAX_LINES = 4;
+    private final String PACKET_TYPE_SIGN = "sign_packet";
+    private final String PACKET_TYPE_GET_SIGN = "get_sign";
+    private final long SESSION_TIMEOUT_MS = 20000;
+    private final int POSITION_OFFSET_RANGE = 10;
+    private final ExpiringMap<UUID, EditSession> pendingEdits = new ExpiringMap<>(SESSION_TIMEOUT_MS, 20000);
+    private boolean listenerRegistered = false;
 
     // 响应状态常量
-    private static final String STATUS_INVALID_REQUEST = "invalid_request";
-    private static final String STATUS_FAILED = "failed";
-    private static final String STATUS_WAITING = "waiting_edit";
-    private static final String STATUS_NOT_FOUND = "not_found";
-    private static final String STATUS_EDITING = "still_editing";
-    private static final String STATUS_COMPLETE = "edit_complete";
-    private static void close(){
+    private final String STATUS_INVALID_REQUEST = "invalid_request";
+    private final String STATUS_FAILED = "failed";
+    private final String STATUS_WAITING = "waiting_edit";
+    private final String STATUS_NOT_FOUND = "not_found";
+    private final String STATUS_EDITING = "still_editing";
+    private final String STATUS_COMPLETE = "edit_complete";
+    //插件
+    private final Plugin plugin;
+    private void close() {
         pendingEdits.shutdown();
     }
-    public static String processSignPacket(String json, Plugin plugin) {
+    public SignPacketUtils(Plugin plugin) {
+        this.plugin = plugin;
+    }
+    public String processSignPacket(String json) {
         final ProcessingResult result = new ProcessingResult();
         final List<ErrorEntry> errors = new ArrayList<>();
 
@@ -64,7 +69,7 @@ public class SignPacketUtils {
         return buildResponse(result, errors);
     }
 
-    public static String getEditResult(String json) {
+    public String getEditResult(String json) {
         final ProcessingResult result = new ProcessingResult();
         final List<ErrorEntry> errors = new ArrayList<>();
 
@@ -96,7 +101,7 @@ public class SignPacketUtils {
         return buildResponse(result, errors);
     }
 
-    private static SignPacketRequest parseSignRequest(String json, List<ErrorEntry> errors) {
+    private SignPacketRequest parseSignRequest(String json, List<ErrorEntry> errors) {
         try {
             SignPacketRequest request = GSON.fromJson(json, SignPacketRequest.class);
             if (!PACKET_TYPE_SIGN.equals(request.type)) {
@@ -109,7 +114,8 @@ public class SignPacketUtils {
             return null;
         }
     }
-    private static Player validatePlayer(String playerName, List<ErrorEntry> errors) {
+
+    private Player validatePlayer(String playerName, List<ErrorEntry> errors) {
         Player player = Bukkit.getPlayerExact(playerName);
         if (player == null || !player.isOnline()) {
             errors.add(new ErrorEntry("Player not found: " + playerName));
@@ -118,7 +124,7 @@ public class SignPacketUtils {
         return player;
     }
 
-    private static void validateLines(String[] lines, List<ErrorEntry> errors) {
+    private void validateLines(String[] lines, List<ErrorEntry> errors) {
         if (lines == null || lines.length == 0) {
             errors.add(new ErrorEntry("Empty sign content"));
             return;
@@ -129,7 +135,7 @@ public class SignPacketUtils {
         }
     }
 
-    private static EditSession createEditSession(Player player, String[] lines) {
+    private EditSession createEditSession(Player player, String[] lines) {
         return new EditSession(
                 UUID.randomUUID(),
                 System.currentTimeMillis(),
@@ -138,14 +144,14 @@ public class SignPacketUtils {
         );
     }
 
-    private static Location findSafeLocation(Player player) {
+    private Location findSafeLocation(Player player) {
         Location base = player.getLocation();
         World world = base.getWorld();
         // 在玩家周围寻找可用的Y坐标
         int attempts = 0;
         while (attempts++ < 20) {
-            int x = base.getBlockX() + (int)(Math.random() * POSITION_OFFSET_RANGE * 2) - POSITION_OFFSET_RANGE;
-            int z = base.getBlockZ() + (int)(Math.random() * POSITION_OFFSET_RANGE * 2) - POSITION_OFFSET_RANGE;
+            int x = base.getBlockX() + (int) (Math.random() * POSITION_OFFSET_RANGE * 2) - POSITION_OFFSET_RANGE;
+            int z = base.getBlockZ() + (int) (Math.random() * POSITION_OFFSET_RANGE * 2) - POSITION_OFFSET_RANGE;
             int y = world.getHighestBlockYAt(x, z) + 1;
 
             Location testLoc = new Location(world, x, y, z);
@@ -157,7 +163,7 @@ public class SignPacketUtils {
         return base.add(0, 10, 0);
     }
 
-    private static void sendSignEditPacket(Player player, EditSession session) {
+    private void sendSignEditPacket(Player player, EditSession session) {
         ProtocolManager protocol = ProtocolLibrary.getProtocolManager();
 
         // 创建并发送TileEntityData包
@@ -183,7 +189,7 @@ public class SignPacketUtils {
         }
     }
 
-    private static synchronized void registerEditListener(Plugin plugin) {
+    private synchronized void registerEditListener(Plugin plugin) {
         if (listenerRegistered) return;
 
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(
@@ -200,7 +206,7 @@ public class SignPacketUtils {
         listenerRegistered = true;
     }
 
-    private static void handleSignUpdate(PacketEvent event) {
+    private void handleSignUpdate(PacketEvent event) {
         Player player = event.getPlayer();
         BlockPosition pos = event.getPacket().getBlockPositionModifier().read(0);
         pendingEdits.values().stream()
@@ -213,40 +219,40 @@ public class SignPacketUtils {
                 });
     }
 
-    private static boolean isSamePosition(BlockPosition pos, Location location) {
+    private boolean isSamePosition(BlockPosition pos, Location location) {
         return pos.getX() == location.getBlockX()
                 && pos.getY() == location.getBlockY()
                 && pos.getZ() == location.getBlockZ();
     }
 
-    private static String[] parseEditedLines(PacketContainer packet) {
+    private String[] parseEditedLines(PacketContainer packet) {
         return Arrays.stream(packet.getChatComponentArrays().read(0))
                 .map(component -> component != null ? component.getJson() : "")
                 .toArray(String[]::new);
     }
 
     // 响应构建相关方法
-    private static void prepareSuccessResponse(ProcessingResult result, EditSession session) {
+    private void prepareSuccessResponse(ProcessingResult result, EditSession session) {
         result.status = STATUS_WAITING;
         result.uuid = session.sessionId.toString();
         result.total = session.initialLines.length;
     }
 
-    private static void prepareResultResponse(ProcessingResult result, EditSession session) {
+    private void prepareResultResponse(ProcessingResult result, EditSession session) {
         result.status = STATUS_COMPLETE;
         result.processed = session.initialLines.length;
         result.lines = session.editedLines;
         result.success_rate = calculateSuccessRate(session);
     }
 
-    private static double calculateSuccessRate(EditSession session) {
+    private double calculateSuccessRate(EditSession session) {
         int validLines = (int) Arrays.stream(session.editedLines)
                 .filter(line -> !line.isEmpty())
                 .count();
         return validLines / (double) session.initialLines.length;
     }
 
-    private static SignResultRequest parseResultRequest(String json, List<ErrorEntry> errors) {
+    private SignResultRequest parseResultRequest(String json, List<ErrorEntry> errors) {
         try {
             SignResultRequest request = GSON.fromJson(json, SignResultRequest.class);
             if (!PACKET_TYPE_GET_SIGN.equals(request.type)) {
@@ -260,7 +266,7 @@ public class SignPacketUtils {
         }
     }
 
-    private static UUID parseSessionId(String uuidStr, List<ErrorEntry> errors) {
+    private UUID parseSessionId(String uuidStr, List<ErrorEntry> errors) {
         try {
             return UUID.fromString(uuidStr);
         } catch (IllegalArgumentException e) {
@@ -269,23 +275,25 @@ public class SignPacketUtils {
         }
     }
 
-    private static void handleGenericError(List<ErrorEntry> errors, Exception e) {
+    private void handleGenericError(List<ErrorEntry> errors, Exception e) {
         errors.add(new ErrorEntry("Processing error: " + e.getMessage()));
         Bukkit.getLogger().warning("Sign processing error: " + e.getMessage());
     }
 
-    private static String buildResponse(ProcessingResult result, List<ErrorEntry> errors) {
+    private String buildResponse(ProcessingResult result, List<ErrorEntry> errors) {
         result.errors = errors.isEmpty() ? Collections.emptyList() : errors;
         return GSON.toJson(result);
     }
+
     // 内部数据结构优化
-    private static class EditSession {
+    private class EditSession {
         final UUID sessionId;
         final long createTime;
         final String[] initialLines;
         final Location location;
         volatile String[] editedLines;
         volatile long completeTime;
+
         EditSession(UUID sessionId, long createTime, String[] initialLines, Location location) {
             this.sessionId = sessionId;
             this.createTime = createTime;
@@ -294,9 +302,18 @@ public class SignPacketUtils {
         }
     }
 
-    private static class SignPacketRequest { String type; String player; String[] line; }
-    private static class SignResultRequest { String type; String uuid; }
-    private static class ProcessingResult {
+    private class SignPacketRequest {
+        String type;
+        String player;
+        String[] line;
+    }
+
+    private class SignResultRequest {
+        String type;
+        String uuid;
+    }
+
+    private class ProcessingResult {
         String status;
         String uuid;
         int processed;
@@ -305,7 +322,8 @@ public class SignPacketUtils {
         String[] lines;
         List<ErrorEntry> errors;
     }
-    private static class ErrorEntry {
+
+    private class ErrorEntry {
         Map<String, Object> failed_entry;
         String error;
         String global_error;
@@ -313,6 +331,7 @@ public class SignPacketUtils {
         ErrorEntry(String globalError) {
             this.global_error = globalError;
         }
+
         ErrorEntry(SignPacketRequest request, String error) {
             this.failed_entry = new HashMap<>();
             this.failed_entry.put("player", request.player);

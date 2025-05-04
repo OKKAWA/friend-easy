@@ -13,10 +13,9 @@ import org.friend.easy.friendEasy.WebData.WebSendService;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class AchievementTracker implements Listener {
 
@@ -57,27 +56,38 @@ public class AchievementTracker implements Listener {
         }
     }
 
+    // 配置常量
     private static final String[] FILTERED_ADVANCEMENTS = {"recipes/", "root"};
-    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final int MAX_RETRIES = 3;
+    private static final int THREAD_POOL_SIZE = 4;
 
+    // 核心组件
     private final IncludeConfig config;
     private final WebSendService webSendService;
     private final JavaPlugin plugin;
+
+    // 数据存储
     private final List<JsonObject> achievementQueue = Collections.synchronizedList(new ArrayList<>());
+
+    // 任务控制
     private final BukkitTask flushTask;
-    private final AtomicBoolean isSending = new AtomicBoolean(false);
+
+    // 重试管理
+    private final AtomicInteger retryCount = new AtomicInteger(0);
+    private final ScheduledExecutorService retryExecutor = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
+    private final List<ScheduledFuture<?>> retryFutures = new CopyOnWriteArrayList<>();
 
     public AchievementTracker(IncludeConfig config, WebSendService webSendService, JavaPlugin plugin) {
         this.config = config;
         this.webSendService = webSendService;
         this.plugin = plugin;
 
-        // 每5秒或队列满10条时发送
+        // 初始化定时任务（每5秒执行）
         this.flushTask = Bukkit.getScheduler().runTaskTimer(
                 plugin,
                 this::processAchievements,
-                20L * 5,  // 5秒后首次执行
-                20L * 5   // 每5秒执行
+                20L * 5,
+                20L * 5
         );
     }
 
@@ -108,14 +118,13 @@ public class AchievementTracker implements Listener {
 
         if (config.includePlayerUuid) json.addProperty("player_uuid", player.getUniqueId().toString());
         if (config.includeTimestamp) json.addProperty("timestamp", System.currentTimeMillis());
-        if (config.includeAdvancement)json.addProperty("advancement", advancementKey);
+        if (config.includeAdvancement) json.addProperty("advancement", advancementKey);
 
         return json;
     }
 
     private void processAchievements() {
-        if (isSending.get() || achievementQueue.isEmpty()) return;
-        isSending.set(true);
+        if (achievementQueue.isEmpty()) return;
 
         List<JsonObject> toSend;
         synchronized (achievementQueue) {
@@ -123,37 +132,28 @@ public class AchievementTracker implements Listener {
             achievementQueue.clear();
         }
 
-        sendWithRetry(toSend, 0);
+        sendAchievements(toSend);
     }
 
-    private void sendWithRetry(List<JsonObject> achievements, int attempt) {
-        if (attempt >= MAX_RETRY_ATTEMPTS) {
-            plugin.getLogger().warning(() -> "成就数据发送失败（已重试" + attempt + "次）");
-            requeueAchievements(achievements);
-            isSending.set(false);
-            return;
-        }
-
+    private void sendAchievements(List<JsonObject> achievements) {
         try {
             webSendService.postJson("/api/ServerInfoCollector", buildPayload(achievements).toString(),
                     new WebSendService.HttpResponseCallback() {
                         @Override
-                        public void onSuccess(WebSendService.HttpResponseWrapper  response) {
+                        public void onSuccess(WebSendService.HttpResponseWrapper response) {
                             plugin.getLogger().info(() -> "成功发送 " + achievements.size() + " 项成就数据");
-                            isSending.set(false);
+                            retryCount.set(0);
                         }
 
                         @Override
                         public void onFailure(Throwable t, WebSendService.HttpResponseWrapper response) {
-                            plugin.getLogger().warning(() -> "成就发送失败，第" + (attempt + 1) + "次重试");
-                            Bukkit.getScheduler().runTaskLater(plugin, () ->
-                                    sendWithRetry(achievements, attempt + 1), 20L * (attempt + 1));
+                            plugin.getLogger().warning(() -> "成就发送失败: " + t.getMessage());
+                            handleSendFailure(achievements);
                         }
                     });
         } catch (URISyntaxException e) {
             plugin.getLogger().severe("无效的API地址: " + e.getMessage());
-            requeueAchievements(achievements);
-            isSending.set(false);
+            handleSendFailure(achievements);
         }
     }
 
@@ -165,16 +165,64 @@ public class AchievementTracker implements Listener {
         return payload;
     }
 
-    private void requeueAchievements(List<JsonObject> achievements) {
-        synchronized (achievementQueue) {
-            achievementQueue.addAll(0, achievements);
+    private void handleSendFailure(List<JsonObject> failedAchievements) {
+        if (retryCount.incrementAndGet() <= MAX_RETRIES) {
+            long delaySeconds = retryCount.get() * 5L; // 指数退避
+            scheduleRetry(failedAchievements, delaySeconds);
+        } else {
+            handleMaxRetries(failedAchievements);
         }
     }
 
+    private void scheduleRetry(List<JsonObject> achievements, long delaySeconds) {
+        ScheduledFuture<?> future = retryExecutor.schedule(
+                () -> requeueWithLock(achievements),
+                delaySeconds,
+                TimeUnit.SECONDS
+        );
+        retryFutures.add(future);
+        plugin.getLogger().info("已安排第 " + retryCount.get() + " 次重试，延迟 " + delaySeconds + " 秒");
+    }
+
+    private synchronized void requeueWithLock(List<JsonObject> achievements) {
+        achievementQueue.addAll(0, achievements);
+        plugin.getLogger().info("重新排队 " + achievements.size() + " 项成就数据");
+    }
+
+    private void handleMaxRetries(List<JsonObject> failedAchievements) {
+        plugin.getLogger().severe("达到最大重试次数，丢弃 " + failedAchievements.size() + " 项成就数据");
+        retryCount.set(0);
+        cancelPendingRetries();
+    }
+
+    private void cancelPendingRetries() {
+        retryFutures.removeIf(future -> {
+            boolean canceled = false;
+            if (!future.isDone() && !future.isCancelled()) {
+                canceled = future.cancel(false);
+            }
+            return canceled;
+        });
+    }
+
     public void disable() {
+        // 停止定时任务
         if (flushTask != null) {
             flushTask.cancel();
         }
-        processAchievements(); // 关闭前处理剩余数据
+
+        // 处理剩余数据
+        processAchievements();
+
+        // 关闭线程池
+        retryExecutor.shutdown();
+        try {
+            if (!retryExecutor.awaitTermination(2, TimeUnit.SECONDS)) {
+                plugin.getLogger().warning("强制终止剩余重试任务: " + retryExecutor.shutdownNow().size());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            plugin.getLogger().warning("线程池关闭被中断");
+        }
     }
 }

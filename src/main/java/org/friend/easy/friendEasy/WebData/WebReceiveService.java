@@ -1,29 +1,40 @@
 package org.friend.easy.friendEasy.WebData;
 
-import org.bukkit.configuration.file.FileConfiguration;
+
 import org.bukkit.plugin.Plugin;
 
 
 import org.bukkit.plugin.java.JavaPlugin;
-import org.friend.easy.friendEasy.ReceiveDataProcessing.AchievementManager;
-import org.friend.easy.friendEasy.ReceiveDataProcessing.BanManager;
-import org.friend.easy.friendEasy.ReceiveDataProcessing.PluginManagementManager;
+import org.friend.easy.friendEasy.ReceiveDataProcessing.*;
 import org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager.v1.SignPacketUtils;
+import org.friend.easy.friendEasy.ReceiveDataProcessing.SignManager.v2.SignManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.CertManager.JKSManager;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.util.ContentType;
 import org.friend.easy.friendEasy.WebData.MultiJettyServer.core.MultiJettyServer;
-
-import org.friend.easy.friendEasy.ReceiveDataProcessing.MessageManager;
 
 import java.io.File;
 import java.util.*;
 
 public class WebReceiveService {
     public MultiJettyServer server;
-    public final Plugin plugin;
-
+    private final Plugin plugin;
+    private final SignManager signManager;
+    private final EasterEggManager easterEggManager;
+    private final MessageManager messageManager;
+    private final PluginManagementManager pluginManagementManager;
+    private final AchievementManager achievementManager;
+    private final BanManager banManager;
+    private final SignPacketUtils signPacketUtils;
     public WebReceiveService(Plugin plugin) {
         this.plugin = plugin;
+        signManager = new SignManager((JavaPlugin) plugin);
+        signManager.initialize();
+        easterEggManager = new EasterEggManager();
+        messageManager = new MessageManager(plugin);
+        pluginManagementManager = new PluginManagementManager((JavaPlugin) plugin);
+        achievementManager = new AchievementManager(plugin);
+        banManager = new BanManager(plugin);
+        signPacketUtils = new SignPacketUtils(plugin);
     }
     public File getSSLFileByTime(){
         ArrayList<Date> dateList = new ArrayList<>();
@@ -56,13 +67,11 @@ public class WebReceiveService {
                 .addEndpoint("/api/banned", new BannedProcessor())
                 .addEndpoint("/api/message", new MessageProcessor())
                 .addEndpoint("/api/achievement", new AchievementProcessor())
-                .addEndpoint("/api/plugin",new PluginProcessor())
+                .addEndpoint("/api/plugin", new PluginProcessor())
                 .addEndpoint("/api/v1/sign/set", new SignSetProcessor())
-                .addEndpoint("/api/v1/sign/get", new SignGetProcessor());
-
-
-
-
+                .addEndpoint("/api/v1/sign/get", new SignGetProcessor())
+                .addEndpoint("/api/v2/sign/manager", new SignManagerProcessor())
+                .addEndpoint("/api/EasterEgg", new EasterEggProcessor());
         plugin.getLogger().info("Starting Jetty Server!");
         try {
             server.start();
@@ -72,10 +81,28 @@ public class WebReceiveService {
 
 
     }
+    class EasterEggProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
+        @Override
+        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
+            result.setBody(easterEggManager.GetEasterEggByJSON(data.body()));
+            result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
+            return result;
+        }
+
+    }
+    class SignManagerProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
+        @Override
+        public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
+            result.setBody(signManager.SendSignPacketByJSON(data.body()));
+            result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
+            return result;
+        }
+
+    }
     class SignGetProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
         public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
-            result.setBody(SignPacketUtils.getEditResult(data.body()));
+            result.setBody(signPacketUtils.getEditResult(data.body()));
             result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }
@@ -84,7 +111,7 @@ public class WebReceiveService {
     class SignSetProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
         public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
-            result.setBody(SignPacketUtils.processSignPacket(data.body(), plugin));
+            result.setBody(signPacketUtils.processSignPacket(data.body()));
             result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }
@@ -93,7 +120,7 @@ public class WebReceiveService {
     class MessageProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
         public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
-            result.setBody(MessageManager.SendMessageByJSON(data.body(), plugin));
+            result.setBody(messageManager.SendMessageByJSON(data.body()));
             result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }
@@ -102,7 +129,7 @@ public class WebReceiveService {
     class PluginProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
         public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
-            result.setBody(PluginManagementManager.handlePluginManagement(data.body(), (JavaPlugin) plugin));
+            result.setBody(pluginManagementManager.handlePluginManagement(data.body()));
             result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }
@@ -111,7 +138,7 @@ public class WebReceiveService {
     class AchievementProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
         public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
-            result.setBody(AchievementManager.GetAchievementsByJSON(data.body(), WebReceiveService.this.plugin));
+            result.setBody(achievementManager.GetAchievementsByJSON(data.body()));
             result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }
@@ -120,7 +147,7 @@ public class WebReceiveService {
     class BannedProcessor implements MultiJettyServer.RequestProcessor, ContentType.SimpleContentType {
         @Override
         public MultiJettyServer.ResultData process(MultiJettyServer.RequestData data, MultiJettyServer.ResultData result) throws Exception {
-            result.setBody(BanManager.BannedByJSON(data.body(), plugin));
+            result.setBody(banManager.BannedByJSON(data.body()));
             result.setContentType(new ContentType.ContentTypeTool().parse(CONTENT_JSON).setCharset("UTF-8"));
             return result;
         }
